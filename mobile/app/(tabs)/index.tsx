@@ -1,16 +1,25 @@
 import { useState } from 'react';
 import { Animated, Pressable, StyleSheet, View } from 'react-native';
+/*
+import funzioni da alre librerie
+useState = Memorizza uno stato che puo cambiare
+Amimated = Permette di creare animazioni
+Pressable = Crea elementi interattivi
+StyleSheet =Organizza gli stili
+View = Contenitore dell’interfaccia
+*/
 import { AppText, Brand, Card, Screen, styles } from '../../components/ui';
+//componenti personalizzat in modo da non ripetere ogni volta
 import { samplePerformance, samplePlayer, sampleRounds } from '../../constants/sampleData';
 import { theme } from '../../constants/theme';
+import { ProfileAvatar } from '../../components/ProfileAvatar';
 import { useEntrance } from '../../hooks/useEntrance';
-
-export default function Dashboard() {
+export default function Dashboard() { // funzione che rappresenta linter schermata home
   const [period, setPeriod] = useState<'latest' | 'recent'>('latest');
   const data = samplePerformance[period];
   const entrance = useEntrance();
-  return <Screen><Brand /><AppText style={styles.eyebrow}>DEMO PREVIEW · SAMPLE DATA</AppText>
-    <View><AppText style={styles.muted}>Welcome, {samplePlayer.name} · Sample player</AppText><AppText accessibilityRole="header" style={styles.heading}>Make your next{ '\n' }round count.</AppText></View>
+  return <Screen><View style={local.row}><Brand /><ProfileAvatar /></View><AppText style={styles.eyebrow}>DEMO PREVIEW · SAMPLE DATA</AppText>
+    <View><AppText style={styles.muted}>Your performance preview</AppText><AppText accessibilityRole="header" style={styles.heading}>Make your next{ '\n' }round count.</AppText></View>
     <Animated.View style={[entrance, { gap: 16 }]}><Card><AppText style={styles.muted}>Handicap · Sample index</AppText><AppText style={local.number}>{samplePlayer.handicap}<AppText style={styles.muted}> HCP</AppText></AppText><AppText style={styles.muted}>An illustration of your future player overview.</AppText></Card>
     <Card><AppText accessibilityRole="header" style={local.subtitle}>Your game at a glance</AppText>
       <View style={local.segment}>{(['latest', 'recent'] as const).map(value => <Pressable key={value} accessibilityRole="button" accessibilityState={{ selected: value === period }} onPress={() => setPeriod(value)} style={({ pressed }) => [local.option, { backgroundColor: period === value ? theme.colors.accent : '#222', opacity: pressed ? .8 : 1 }]}><AppText style={{ color: period === value ? '#000' : '#fff', fontSize: 12 }}>{value === 'latest' ? 'Last round' : 'Recent rounds'}</AppText></Pressable>)}</View>

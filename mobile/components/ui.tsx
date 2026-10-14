@@ -1,14 +1,14 @@
 import type { PropsWithChildren } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import type { TextProps } from 'react-native';
+import type { ScrollViewProps, TextProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { theme } from '../constants/theme';
 
 export function AppText({ style, ...props }: TextProps) {
   return <Text {...props} style={[styles.text, style]} />;
 }
-export function Screen({ children }: PropsWithChildren) {
-  return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}><ScrollView contentContainerStyle={styles.content}>{children}</ScrollView></SafeAreaView>;
+export function Screen({ children, keyboardShouldPersistTaps }: PropsWithChildren<{ keyboardShouldPersistTaps?: ScrollViewProps['keyboardShouldPersistTaps'] }>) {
+  return <SafeAreaView style={styles.safe} edges={['top', 'left', 'right']}><ScrollView keyboardShouldPersistTaps={keyboardShouldPersistTaps} contentContainerStyle={styles.content}>{children}</ScrollView></SafeAreaView>;
 }
 export function Card({ children }: PropsWithChildren) {
   return <View style={styles.card}>{children}</View>;
