@@ -2,11 +2,11 @@
 
 ## Scope
 
-SQLAlchemy 2.0 typed ORM, environment-based configuration, lazy sessions, and the initial Alembic users migration are implemented. Local PostgreSQL 17.11 (Homebrew) is configured with database `fairway_iq_dev`, schema `public`. Migration `0001_create_users` was explicitly applied and verified: `users` and `alembic_version` exist; columns, constraints, unique email index, updated_at trigger/function, and revision were checked with no ORM/schema drift. This records the prior verification; no migration or database operation is run by this documentation update. Existing FastAPI `/` and `/health` remain unchanged and do not require a configured database. No application startup runs migrations or creates tables. No registration, login, JWT, password hashing service, or mobile integration is implemented.
+SQLAlchemy 2.0 typed ORM, environment-based configuration, lazy sessions, and the initial Alembic users migration are implemented. Local PostgreSQL 17.11 (Homebrew) is configured with database `fairway_iq_dev`, schema `public`. Migration `0001_create_users` was explicitly applied and verified: `users` and `alembic_version` exist; columns, constraints, unique email index, updated_at trigger/function, and revision were checked with no ORM/schema drift. This records the prior verification; no migration or database operation is run by this documentation update. Existing FastAPI `/` and `/health` remain unchanged and do not require a configured database. No application startup runs migrations or creates tables. Registration and Argon2id hashing are now implemented; see [registration documentation](backend-registration.md). Login credential verification is implemented without sessions; see [login documentation](backend-login.md). JWT and mobile authentication integration remain planned.
 
 ## Dependencies and structure
 
-New runtime dependencies in `backend/requirements.txt`: SQLAlchemy 2.0.54, Alembic 1.20.0, and psycopg 3.3.6 with its matching binary distribution. Existing Pydantic Settings and python-dotenv are reused. `requirements-dev.txt` adds pytest 9.1.1 for tests. These packages are installed and tested locally. The previously ranged psycopg and pytest requirements are now pinned to those installed versions, without upgrading packages. Runtime requirements are exact pins; this is not a hash-locked transitive dependency manifest.
+New runtime dependencies in `backend/requirements.txt`: SQLAlchemy 2.0.54, Alembic 1.20.0, and psycopg 3.3.6 with its matching binary distribution. Registration and credential verification add argon2-cffi 25.1.0 and its pinned bindings/CFFI dependencies. Existing Pydantic Settings and python-dotenv are reused. `requirements-dev.txt` adds pytest 9.1.1 for tests. These packages are installed and tested locally. The previously ranged psycopg and pytest requirements are now pinned to those installed versions, without upgrading packages. Runtime requirements are exact pins; this is not a hash-locked transitive dependency manifest.
 
 - `core/config.py`: Pydantic Settings; required `DATABASE_URL` represented as SecretStr; loads `backend/.env` regardless of working directory; environment variables take precedence. Generic PostgreSQL URLs normalize to the psycopg 3 driver. Other drivers/databases and missing database names are rejected.
 - `db/base.py`: typed DeclarativeBase and named constraints.
@@ -92,10 +92,10 @@ Do not select/log password hashes as part of inspection.
 ## Model constraints and timestamp semantics
 
 - UUID primary key: application-generated uuid4 plus PostgreSQL gen_random_uuid default for direct SQL inserts; no extension installation is performed.
-- Email: required varchar(254), unique indexed value, normalized lower/trim via ORM and enforced by a database check. Basic @/length checks are structural; full email format/ownership validation belongs in future auth schemas and verification flow. Case-insensitive account identity is a deliberate application policy.
+- Email: required varchar(254), unique indexed value, normalized lower/trim via ORM and enforced by a database check. Basic @/length checks are structural; registration schemas validate email format; ownership verification remains planned. Case-insensitive account identity is a deliberate application policy.
 - Full name: required varchar(100), trimmed nonempty constraint.
-- Password hash: required varchar(512), deferred ORM loading, database check requiring an Argon2id prefix. This rejects ordinary plaintext strings but cannot prove a hash is genuine. Future authentication must generate and verify hashes through a reviewed Argon2id library; never concatenate a prefix onto plaintext.
-- is_active: required, true application/server default. This requested default is not an email-verification system; add separate verification state before enabling registration.
+- Password hash: required varchar(512), deferred ORM loading, database check requiring an Argon2id prefix. This rejects ordinary plaintext strings but cannot prove a hash is genuine. Registration generates genuine hashes through argon2-cffi; never concatenate a prefix onto plaintext.
+- is_active: required, true application/server default. This requested default is not an email-verification system; separate ownership-verification state is still required before production authentication.
 - created_at/updated_at: required TIMESTAMP WITH TIME ZONE, server clock defaults. ORM updates request now(); the database trigger maintains updated_at even for direct SQL updates. CURRENT_TIMESTAMP is transaction-based, so multiple changes within one transaction can share timestamps.
 
 Settings/error text hides input values; migration/check commands suppress driver error text. Never log `settings.sqlalchemy_url`, raw driver exceptions, `ValidationError.errors()` input payloads, sessions, or ORM attribute dictionaries. Parameter hiding reduces accidental SQL logging but is not a complete logging security policy.
@@ -116,7 +116,7 @@ createdb --owner=fairway_iq_dev fairway_iq_test
 
 Set `TEST_DATABASE_URL` privately to that database (not `DATABASE_URL`), then run the same pytest command. Tests refuse database names without the `fairway_iq_test` prefix and refuse a matching configured application database name. Use a dedicated disposable database you own; the name check is a guardrail, not proof that an arbitrary server is safe. Each test creates a random schema inside a transaction, migrates only that schema, and rolls back its own transaction afterward. No existing database is reset, no public tables are migrated, and no database is dropped.
 
-Integration tests exercise actual uniqueness/null/hash/name constraints, timezone defaults, metadata/migration agreement and the direct-SQL timestamp trigger. There is no SQLite stand-in for PostgreSQL behavior.
+Integration tests exercise actual uniqueness/null/hash/name constraints, timezone defaults, metadata/migration agreement, the direct-SQL timestamp trigger, registration persistence/duplicates, and login credential verification. There is no SQLite stand-in for PostgreSQL behavior.
 
 ## Verification status — October 14, 2026
 
@@ -124,9 +124,9 @@ Integration tests exercise actual uniqueness/null/hash/name constraints, timezon
 - Existing `/`, `/health`, and `/openapi.json` verified through an in-memory ASGI client without database configuration.
 - Git ignore rules verified for real backend environment files.
 - PostgreSQL 17.11 connectivity and target `fairway_iq_dev` were previously verified. Initial migration `0001_create_users` was applied explicitly and its table, constraints/index, timezone columns, defaults, trigger/function and revision were verified. These are historical database checks; no migration was executed during this cleanup.
-- Backend tests: **14 passed, 3 integration tests skipped**. Integration tests require a dedicated disposable PostgreSQL test database; development-schema inspection is not a substitute for those tests.
+- Backend tests: **53 passed, none skipped**, including five PostgreSQL integration tests using the isolated `fairway_iq_test_registration` database. Test tables and temporary schemas were rolled back; the development database was not used by automated tests.
 - One existing Starlette/httpx deprecation warning remains. Dependency consistency check reports no broken requirements.
 - Real `backend/.env` is ignored by Git and was restricted to owner-only permissions during the security review. Its contents are not part of the commit.
-- No login/JWT implementation, credential changes, staging, commit, or push was performed.
+- Registration and login credential verification are implemented. Manual Swagger checks confirmed registration returns 201, valid login returns 200, and incorrect passwords and unknown emails return identical generic 401 responses. The displayed API responses contained no passwords, hashes or tokens. No authenticated session or JWT is created.
 
-Known limits: isolated PostgreSQL integration tests and concurrency testing remain outstanding; production TLS enforcement, hashing service, authentication and connection monitoring are not implemented. Exact runtime/dev pins improve repeatability but do not replace a platform-specific dependency lock with artifact hashes. Previously documented mobile dependency advisories remain unresolved.
+Known limits: concurrency/load testing, request-size/rate/concurrency limits, email ownership verification, production TLS enforcement, authenticated sessions/tokens and connection monitoring remain outstanding. See the registration and login documents for endpoint behavior and verification details. Exact runtime/dev pins improve repeatability but do not replace a platform-specific dependency lock with artifact hashes. Previously documented mobile dependency advisories remain unresolved.
