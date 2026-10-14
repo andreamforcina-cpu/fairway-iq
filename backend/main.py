@@ -4,12 +4,17 @@ from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.responses import JSONResponse
 
 from backend.api.auth import router as auth_router
+from backend.security.rate_limits import AuthRateLimiter, AuthRateLimitMiddleware
 
 app = FastAPI(
     title="FAIRWAY IQ API",
     description="AI-Powered Golf Analytics Platform",
     version="0.1.0"
 )
+
+auth_rate_limiter = AuthRateLimiter()
+app.add_middleware(AuthRateLimitMiddleware, limiter=auth_rate_limiter)
+
 
 @app.get("/")
 def home():

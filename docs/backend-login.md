@@ -65,4 +65,8 @@ The existing integration fixture accepts only explicitly named `fairway_iq_test*
 
 ## Remaining limitations
 
-Before public deployment add request-size limits, login rate/concurrency limiting and abuse monitoring. Each Argon2 verification consumes approximately 64 MiB; dummy checks intentionally have the same cost. Require HTTPS and verified database TLS remotely. Email verification, password reset, MFA, hash upgrade policy, JWT/access tokens, refresh rotation, secure mobile storage and protected-route guards remain planned. Registration's different success/duplicate responses still expose account existence independently of this login endpoint. Timing tests are structural rather than statistical load measurements.
+Before public deployment add request-size limits, shared login rate limits, concurrency limiting and abuse monitoring. Each Argon2 verification consumes approximately 64 MiB; dummy checks intentionally have the same cost. Require HTTPS and verified database TLS remotely. Email verification, password reset, MFA, hash upgrade policy, JWT/access tokens, refresh rotation, secure mobile storage and protected-route guards remain planned. Registration's different success/duplicate responses still expose account existence independently of this login endpoint. Timing tests are structural rather than statistical load measurements.
+
+## Authentication throttling
+
+The API now limits login to 20 and registration to 5 requests per client IP in a sliding 60-second window. Exhausted limits return generic HTTP 429 with Retry-After before database or password work. This is process-local protection for single-worker development; production needs shared/edge limits. See [rate-limiting documentation](backend-rate-limiting.md). Earlier verification counts above describe the preceding authentication checkpoint.
