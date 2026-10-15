@@ -49,7 +49,7 @@ Coverage includes normalized registration, genuine salted Argon2id hashes, malfo
 - Add email ownership verification, breached-password screening, and registration abuse prevention. `is_active=true` is the existing model default, not verified ownership.
 - Different 201/409 outcomes allow account enumeration despite generic error wording. Revisit the registration/verification contract before production.
 - Configure HTTPS, verified database TLS, least-privilege roles, and redacted infrastructure/APM logs. Never enable request-body logging on authentication endpoints.
-- [Login credential verification](backend-login.md) is now implemented without sessions. Access/refresh tokens, secure mobile storage, authentication guards, password reset, and authenticated profile integration remain unimplemented.
+- [Login credential verification](backend-login.md) is now implemented without sessions. Backend access/refresh sessions and the protected profile endpoint are implemented separately; see [sessions](backend-sessions.md). Secure mobile storage, mobile navigation guards and password reset remain unimplemented.
 - Concurrent duplicate requests rely on the verified unique index; a concurrent-load test is not yet included. Transient commit-acknowledgement failures can require retry/duplicate handling by the client.
 - Existing Starlette/httpx TestClient deprecation warning remains; no unrelated dependency upgrades were performed.
 

@@ -65,10 +65,15 @@ def login_db() -> Iterator[Session]:
 
 @router.post('/login', response_model=LoginResponse)
 def login(data: LoginRequest, session: Session = Depends(login_db)) -> LoginResponse:
+    verify_login_credentials(data, session)
+    return LoginResponse()
+
+
+def verify_login_credentials(data: LoginRequest, session: Session):
     try:
-        # Select only what verification needs; no deferred second lookup or user serialization.
+        # Retrieve only credential verification fields; hashes never leave this module.
         account = session.execute(
-            select(User.password_hash, User.is_active).where(User.email == data.email)
+            select(User.id, User.password_hash, User.is_active).where(User.email == data.email)
         ).one_or_none()
         matched = verify_password(account.password_hash if account else None, data.password.get_secret_value())
     except SQLAlchemyError:
@@ -76,4 +81,4 @@ def login(data: LoginRequest, session: Session = Depends(login_db)) -> LoginResp
         raise HTTPException(503, 'Credential verification is temporarily unavailable.') from None
     if not matched or account is None or not account.is_active:
         raise HTTPException(401, 'Invalid email or password.')
-    return LoginResponse()
+    return account

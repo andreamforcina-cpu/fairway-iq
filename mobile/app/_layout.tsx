@@ -1,4 +1,3 @@
-import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFonts } from 'expo-font';
 import { Inter_400Regular } from '@expo-google-fonts/inter/400Regular';
@@ -10,11 +9,13 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { theme } from '../constants/theme';
 import { AppText } from '../components/ui';
 import { useReducedMotion } from '../hooks/useReducedMotion';
+import { SessionProvider } from '../hooks/useSession';
+import { SessionNavigator } from '../components/SessionNavigator';
 
 export default function RootLayout() {
   const reduced = useReducedMotion();
   const [loaded, error] = useFonts({ Inter_400Regular, Inter_500Medium, Inter_600SemiBold, InstrumentSerif_400Regular_Italic });
   if (!loaded && !error) return <View style={{ flex: 1, backgroundColor: '#000', alignItems: 'center', justifyContent: 'center' }}><ActivityIndicator color={theme.colors.accent} accessibilityLabel="Loading FAIRWAY IQ" /></View>;
   if (error) return <View style={{ flex: 1, backgroundColor: '#000', padding: 32, justifyContent: 'center' }}><AppText>Unable to load fonts. Please restart the app.</AppText></View>;
-  return <SafeAreaProvider><StatusBar style="light" /><Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: '#000' }, animation: reduced ? 'none' : 'fade' }} /></SafeAreaProvider>;
+  return <SafeAreaProvider><StatusBar style="light" /><SessionProvider><SessionNavigator reduced={reduced} /></SessionProvider></SafeAreaProvider>;
 }

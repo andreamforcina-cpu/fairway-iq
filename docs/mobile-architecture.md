@@ -22,7 +22,7 @@ Inter and Instrument Serif Italic are packaged through Expo Google Fonts; runtim
 
 The preview does not call the API or require credentials. Copy `.env.example` to `.env` and set `EXPO_PUBLIC_API_URL` when testing the service layer. On a physical iPhone, use the Mac's LAN IP or a reachable HTTPS endpoint; iPhone localhost is the phone itself. Development HTTP is permitted only in development builds. Production requests require HTTPS. Responses are checked against the existing `/` and `/health` contracts; requests time out after ten seconds and do not log private response data.
 
-There is no authentication or token storage in this iteration. Expo SecureStore is installed and configured for a later authenticated integration; no passwords, tokens, or fake accounts are created. All `EXPO_PUBLIC_*` values are public bundled configuration and must never contain secrets.
+Account forms now connect to backend sessions, with native refresh storage in SecureStore and memory-only access tokens. See [mobile authentication](mobile-authentication.md) for lifecycle, setup and verification limits. All `EXPO_PUBLIC_*` values are public bundled configuration and must never contain secrets.
 
 ## Development
 
@@ -52,7 +52,7 @@ Safe areas protect screen content. Screens scroll and use a centered maximum wid
 
 ## Next sprints (require approval)
 
-Round entry and local persistence; real analytics; AI service integration; player profile/settings; authentication backed by SecureStore; production API contracts; final branded icons; real-device and VoiceOver QA; signed development and distribution builds.
+Round entry and local persistence; real analytics; AI service integration; player profile/settings; live authentication/device verification; production API contracts; final branded icons; real-device and VoiceOver QA; signed development and distribution builds.
 
 ## Verification results — October 13, 2026
 
@@ -90,7 +90,7 @@ Sources: [braces advisory](https://github.com/advisories/GHSA-vfj7-8cjw-p6xm), [
 
 The registry proposes Expo 44 / React Native 0.72 downgrades and Router 58 for parts of the tree, which do not preserve the chosen SDK 57 baseline. Some proposed animation-package downgrades also fall outside Expo's supported version map. They were not applied. No fully verified compatible remediation for the root findings was established in this sprint. Do not use a forced audit fix without evaluating SDK and native runtime compatibility.
 
-SecureStore remains installed but unused because authentication is not implemented. API requests use HTTPS in production, validate response contracts, time out, and do not log private response bodies. The API service is not connected to a screen yet. Public Expo environment values must not contain secrets.
+The original stabilization sprint did not use SecureStore. The subsequent [mobile authentication](mobile-authentication.md) increment uses it for native refresh tokens. API requests use HTTPS in production, validate response contracts, time out, and do not log private response bodies. The API service is not connected to a screen yet. Public Expo environment values must not contain secrets.
 
 ## Git and next verification step
 

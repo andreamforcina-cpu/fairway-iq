@@ -1,6 +1,6 @@
 # FAIRWAY IQ for iPhone
 
-First iteration: welcome, five-tab navigation, and a sample dashboard. No authentication, AI chat, round tracking, or persistence yet. Web and backend projects are independent.
+Welcome, five-tab navigation, sample dashboard and local round tracker. Registration and login connect to backend sessions; native refresh tokens use SecureStore and access tokens stay in memory. Browser sessions stay in memory and do not survive reload. Performance data remains illustrative. See [mobile authentication](../docs/mobile-authentication.md) for setup, verification and limitations.
 
 ```sh
 npm ci

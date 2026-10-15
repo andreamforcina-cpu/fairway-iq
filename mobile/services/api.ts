@@ -1,7 +1,7 @@
 export type HealthResponse = { status: 'healthy' };
 export type WelcomeResponse = { message: string; status: 'running' };
 
-function baseUrl(): string {
+export function baseUrl(): string {
   const configured = process.env.EXPO_PUBLIC_API_URL;
   if (!configured) throw new Error('API is not configured. Set EXPO_PUBLIC_API_URL.');
   const url = new URL(configured);

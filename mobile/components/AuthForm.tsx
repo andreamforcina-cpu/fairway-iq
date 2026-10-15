@@ -7,7 +7,8 @@ import { AppText, Brand, Card, Screen, styles } from './ui';
 import { theme } from '../constants/theme';
 import { validateAuthForm } from '../utils/authValidation';
 import type { AuthFormErrors, AuthFormValues, AuthMode } from '../utils/authValidation';
-import { checkAuthenticationAvailability } from '../services/authAvailability';
+import { sessionApi, AuthError } from '../services/sessionApi';
+import { useSession } from '../hooks/useSession';
 
 interface FieldProps extends Pick<TextInputProps, 'keyboardType' | 'textContentType' | 'autoComplete' | 'autoCapitalize' | 'maxLength'> {
   label: string;
@@ -24,6 +25,7 @@ function AuthField({ label, value, onChange, error, password = false, disabled, 
 }
 
 export function AuthForm({ mode }: { mode: AuthMode }) {
+  const { login } = useSession();
   const registration = mode === 'register';
   const title = registration ? 'Create Account' : 'Log In';
   const [values, setValues] = useState<AuthFormValues>({ fullName: '', email: '', password: '', confirmPassword: '' });
@@ -54,11 +56,14 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
     if (Object.keys(validation).length) return;
     pending.current = true; setSubmitting(true); setMessage('');
     try {
-      // No credentials are passed: there is no backend auth endpoint yet.
-      await checkAuthenticationAvailability();
-      if (active.current) setMessage('Authentication not available yet. No account was created and you have not been logged in.');
-    } catch {
-      if (active.current) setMessage('Authentication not available yet. Please try again after the service is connected.');
+      if (registration) {
+        await sessionApi.register(values.fullName, values.email, values.password);
+        if (active.current) setMessage('Account created. Log in to start your session.');
+      } else {
+        await login(values.email, values.password);
+      }
+    } catch (error) {
+      if (active.current) setMessage(error instanceof AuthError ? error.message : 'Unable to save your session securely. Please try again.');
     } finally {
       pending.current = false;
       if (active.current) { setSubmitting(false); setValues(previous => ({ ...previous, password: '', confirmPassword: '' })); }
@@ -67,13 +72,13 @@ export function AuthForm({ mode }: { mode: AuthMode }) {
 
   return <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><Screen keyboardShouldPersistTaps="handled">
     <Pressable accessibilityRole="button" accessibilityLabel="Back to welcome" onPress={() => router.canGoBack() ? router.back() : router.replace('/')} style={local.back}><Ionicons name="arrow-back" size={22} color={theme.colors.text} /><AppText>Back</AppText></Pressable><Brand /><AppText accessibilityRole="header" style={styles.heading}>{title}</AppText>
-    <Card><AppText style={styles.eyebrow}>AUTHENTICATION NOT AVAILABLE YET</AppText><AppText style={styles.muted}>These forms preview the upcoming account flow. Please use test values. No credentials are sent or saved.</AppText></Card>
+    <Card><AppText style={styles.eyebrow}>YOUR FAIRWAY IQ ACCOUNT</AppText><AppText style={styles.muted}>Sign in to access your profile. Performance screens still show sample data.</AppText></Card>
     {registration ? <AuthField label="Full Name" value={values.fullName} onChange={value => update('fullName', value)} error={errors.fullName} autoCapitalize="words" textContentType="name" autoComplete="name" maxLength={100} disabled={submitting} /> : null}
     <AuthField label="Email" value={values.email} onChange={value => update('email', value)} error={errors.email} autoCapitalize="none" keyboardType="email-address" textContentType="emailAddress" autoComplete="email" maxLength={254} disabled={submitting} />
     <AuthField label="Password" value={values.password} onChange={value => update('password', value)} error={errors.password} autoCapitalize="none" textContentType={registration ? 'newPassword' : 'password'} autoComplete={registration ? 'new-password' : 'current-password'} maxLength={129} password disabled={submitting} />
-    {registration ? <><AppText style={styles.muted}>Use 15–128 characters, including spaces or symbols. Don’t reuse a real password for this preview.</AppText><AuthField label="Confirm Password" value={values.confirmPassword} onChange={value => update('confirmPassword', value)} error={errors.confirmPassword} autoCapitalize="none" textContentType="newPassword" autoComplete="new-password" maxLength={129} password disabled={submitting} /></> : null}
+    {registration ? <><AppText style={styles.muted}>Use 15–128 characters, including spaces or symbols. Choose a unique password.</AppText><AuthField label="Confirm Password" value={values.confirmPassword} onChange={value => update('confirmPassword', value)} error={errors.confirmPassword} autoCapitalize="none" textContentType="newPassword" autoComplete="new-password" maxLength={129} password disabled={submitting} /></> : null}
     {message ? <AppText accessibilityLiveRegion="polite" style={local.error}>{message}</AppText> : null}
-    <Pressable accessibilityRole="button" accessibilityLabel={submitting ? 'Checking authentication availability' : title} accessibilityState={{ disabled: submitting, busy: submitting }} disabled={submitting} onPress={() => { void submit(); }} style={({ pressed }) => [styles.button, { opacity: pressed || submitting ? .8 : 1 }]}>{submitting ? <ActivityIndicator color="#000" /> : <AppText style={styles.buttonText}>{title}</AppText>}</Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={submitting ? 'Submitting' : title} accessibilityState={{ disabled: submitting, busy: submitting }} disabled={submitting} onPress={() => { void submit(); }} style={({ pressed }) => [styles.button, { opacity: pressed || submitting ? .8 : 1 }]}>{submitting ? <ActivityIndicator color="#000" /> : <AppText style={styles.buttonText}>{title}</AppText>}</Pressable>
     <Pressable accessibilityRole="button" onPress={() => router.replace(registration ? '/login' : '/register')} style={local.link}><AppText style={{ color: theme.colors.accent }}>{registration ? 'Already have an account? Log In' : 'Create an account'}</AppText></Pressable>
   </Screen></KeyboardAvoidingView>;
 }

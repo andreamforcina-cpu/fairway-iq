@@ -130,3 +130,7 @@ Integration tests exercise actual uniqueness/null/hash/name constraints, timezon
 - Registration and login credential verification are implemented. Manual Swagger checks confirmed registration returns 201, valid login returns 200, and incorrect passwords and unknown emails return identical generic 401 responses. The displayed API responses contained no passwords, hashes or tokens. No authenticated session or JWT is created.
 
 Known limits: concurrency/load testing, request-size/rate/concurrency limits, email ownership verification, production TLS enforcement, authenticated sessions/tokens and connection monitoring remain outstanding. See the registration and login documents for endpoint behavior and verification details. Exact runtime/dev pins improve repeatability but do not replace a platform-specific dependency lock with artifact hashes. Previously documented mobile dependency advisories remain unresolved.
+
+## Session infrastructure
+
+Migration `0002_create_auth_sessions` was applied to local `fairway_iq_dev`, schema `public`, after explicit approval and preflight checks. The committed revision, new session tables and ORM metadata agreement were verified. Existing users columns, indexes, triggers and row count were unchanged. All 85 backend tests passed on the isolated test database. See [backend-sessions.md](backend-sessions.md) for verification and setup details; earlier sections describe the initial users-only checkpoint.

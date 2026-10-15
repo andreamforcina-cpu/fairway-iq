@@ -8,7 +8,6 @@ async function load(path) {
   return import(`data:text/javascript;base64,${Buffer.from(outputText).toString('base64')}`);
 }
 const { validateAuthForm } = await load('../utils/authValidation.ts');
-const { checkAuthenticationAvailability } = await load('../services/authAvailability.ts');
 const valid = { fullName: 'Alex Golfer', email: 'alex@example.test', password: 'test phrase for golf', confirmPassword: 'test phrase for golf' };
 
 test('valid registration passes without changing input', () => {
@@ -44,9 +43,4 @@ test('login requires only email and password, not registration fields or minimum
 });
 test('login rejects missing and oversized passwords', () => {
   for (const password of ['', 'a'.repeat(129)]) assert.ok(validateAuthForm('login', { ...valid, password }).password);
-});
-test('unavailable capability makes no request and never reports authentication success', async t => {
-  const fetch = t.mock.method(globalThis, 'fetch', async () => { throw new Error('Unexpected request'); });
-  assert.deepEqual(await checkAuthenticationAvailability(), { available: false });
-  assert.equal(fetch.mock.callCount(), 0);
 });

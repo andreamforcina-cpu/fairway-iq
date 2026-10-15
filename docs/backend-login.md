@@ -70,3 +70,7 @@ Before public deployment add request-size limits, shared login rate limits, conc
 ## Authentication throttling
 
 The API now limits login to 20 and registration to 5 requests per client IP in a sliding 60-second window. Exhausted limits return generic HTTP 429 with Retry-After before database or password work. This is process-local protection for single-worker development; production needs shared/edge limits. See [rate-limiting documentation](backend-rate-limiting.md). Earlier verification counts above describe the preceding authentication checkpoint.
+
+## Session endpoints
+
+`/auth/login` retains the credential-only behavior described above. The separate `/auth/token`, `/auth/refresh`, `/auth/logout` and protected `/auth/me` implement server-side sessions with opaque tokens. See [session documentation](backend-sessions.md) for the prepared migration, token handling and current verification results. The session migration was applied and verified locally after explicit approval; mobile integration is implemented, with initial iPhone verification recorded in `mobile-authentication.md`.

@@ -8,7 +8,8 @@ from time import monotonic
 from starlette.responses import JSONResponse
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-AUTH_LIMITS = {'/auth/login': 20, '/auth/register': 5}
+AUTH_LIMITS = {'/auth/login': 20, '/auth/token': 20, '/auth/register': 5,
+               '/auth/refresh': 30, '/auth/logout': 30}
 
 
 class AuthRateLimiter:
@@ -34,7 +35,8 @@ class AuthRateLimiter:
                 if self._buckets[oldest][-1] > cutoff:
                     break
                 self._buckets.popitem(last=False)
-            key = (path, client)
+            # Credential verification and session issuance share one quota.
+            key = ('/auth/login' if path == '/auth/token' else path, client)
             bucket = self._buckets.get(key)
             if bucket is None:
                 if len(self._buckets) >= self.max_keys:

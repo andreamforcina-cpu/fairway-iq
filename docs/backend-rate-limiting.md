@@ -4,8 +4,10 @@ The single-worker API now applies a sliding 60-second window per client IP and e
 
 | Endpoint | Requests per window |
 | --- | --- |
-| `POST /auth/login` | 20 |
+| `POST /auth/login` and `/auth/token` | 20 combined |
 | `POST /auth/register` | 5 |
+| `POST /auth/refresh` | 30 |
+| `POST /auth/logout` | 30 |
 
 All attempts count, including successful requests and invalid input. A rejected attempt does not extend the window. Health, documentation and unrelated routes remain unaffected. Rates are centralized in `backend/security/rate_limits.py`; changing them requires a reviewed code change and restart.
 
@@ -37,6 +39,6 @@ Unit tests use an injected monotonic clock rather than sleeps. They cover exact 
 
 To preview without inserting users, submit `{}` to `/auth/register` in Swagger five times (422), then a sixth time (429). Wait for the Retry-After interval before trying again. Login permits twenty attempts in its independent window. These thresholds are development defaults, not measured production capacity.
 
-Existing login still only verifies credentials: no session, JWT or mobile integration is added. No database migration or dependency change is required.
+Existing login still only verifies credentials. Separate [session endpoints](backend-sessions.md) now issue opaque tokens and require their prepared migration; mobile integration is implemented; JWT is not used. Rate limiting itself adds no dependency or database change.
 
-Verification result: **60 backend tests passed, none skipped**, including the five existing isolated PostgreSQL tests. One existing Starlette/httpx TestClient deprecation warning remains. No automated tests used the development database.
+Rate-limiting checkpoint verification: **60 backend tests passed, none skipped**, including the five existing isolated PostgreSQL tests. One existing Starlette/httpx TestClient deprecation warning remains. No automated tests used the development database.

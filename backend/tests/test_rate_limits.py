@@ -5,6 +5,7 @@ import pytest
 from fastapi.testclient import TestClient
 
 from backend.api.auth import login_db, registration_db
+from backend.api.sessions import session_db
 from backend.main import app
 from backend.security.rate_limits import AUTH_LIMITS, AuthRateLimiter, AuthRateLimitMiddleware
 
@@ -44,7 +45,8 @@ def test_concurrent_requests_cannot_exceed_limit():
 
 @pytest.mark.parametrize('path', AUTH_LIMITS)
 def test_throttle_response_and_forwarded_headers_cannot_bypass_it(path):
-    dependency = login_db if path.endswith('login') else registration_db
+    dependency = (login_db if path.endswith('login') else registration_db
+                  if path.endswith('register') else session_db)
     session = MagicMock()
     app.dependency_overrides[dependency] = lambda: session
     try:

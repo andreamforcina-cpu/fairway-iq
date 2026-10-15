@@ -4,17 +4,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { AppText, Brand, Button, styles } from '../components/ui';
 import { theme } from '../constants/theme';
 import { useEntrance } from '../hooks/useEntrance';
+import { useSession } from '../hooks/useSession';
 import { ShotTrajectory } from '../components/ShotTrajectory';
 
 export default function Welcome() {
+  const { startPreview, message, logout } = useSession();
   const entrance = useEntrance();
   const { height, width } = useWindowDimensions();
   const compact = height < 750 || width < 360;
   return <SafeAreaView style={[styles.safe, local.background]}><Animated.ScrollView style={entrance} contentContainerStyle={[local.content, compact ? local.compactContent : undefined]}>
     <Brand />
+    {message ? <AppText accessibilityLiveRegion="polite" style={styles.muted}>{message}</AppText> : null}
+    {message ? <Button label="Clear saved session" onPress={() => { void logout(); }} /> : null}
     <View style={[local.visual, compact ? local.compactVisual : undefined]}><ShotTrajectory /></View>
     <View style={{ gap: 16 }}><AppText style={styles.eyebrow}>YOUR GAME. WITH CLARITY.</AppText><AppText accessibilityRole="header" style={[local.title, compact ? local.compactTitle : undefined]}>Play smarter.{ '\n' }Golf <AppText style={[local.serif, compact ? local.compactSerif : undefined]}>better.</AppText></AppText><AppText style={styles.muted}>A clearer picture of your game. A more intentional next round.</AppText></View>
-    <View style={{ gap: 12 }}><Button label="Create Account" onPress={() => router.push('/register')} /><Pressable accessibilityRole="button" onPress={() => router.push('/login')} style={({ pressed }) => [local.loginButton, { opacity: pressed ? .8 : 1 }]}><AppText style={{ fontFamily: theme.fonts.bold }}>Log In</AppText></Pressable><Pressable accessibilityRole="button" onPress={() => router.push('/(tabs)')} style={local.previewLink}><AppText style={[styles.muted, { textAlign: 'center', fontSize: 12 }]}>View sample preview</AppText></Pressable></View>
+    <View style={{ gap: 12 }}><Button label="Create Account" onPress={() => router.push('/register')} /><Pressable accessibilityRole="button" onPress={() => router.push('/login')} style={({ pressed }) => [local.loginButton, { opacity: pressed ? .8 : 1 }]}><AppText style={{ fontFamily: theme.fonts.bold }}>Log In</AppText></Pressable><Pressable accessibilityRole="button" onPress={() => { startPreview(); router.push('/(tabs)'); }} style={local.previewLink}><AppText style={[styles.muted, { textAlign: 'center', fontSize: 12 }]}>View sample preview</AppText></Pressable></View>
   </Animated.ScrollView></SafeAreaView>;
 }
 const local = StyleSheet.create({
