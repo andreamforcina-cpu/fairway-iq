@@ -1,6 +1,6 @@
 # FAIRWAY IQ — stato progetto
 
-> Aggiornamento successivo del 15 ottobre 2026: l’utente ha autorizzato commit e push con «fai tutto». Le indicazioni di mancata autorizzazione nei checkpoint precedenti sotto sono storiche. Tracker, fine anticipata e memoria vengono inclusi nel nuovo checkpoint; le prove iPhone della fine anticipata restano pendenti. Verificare hash e sincronizzazione effettivi con Git alla ripresa.
+> Checkpoint pubblicato il 15 ottobre 2026: push su `origin/main` riuscito fino a **c40c396**, comprendente autenticazione (`75eced0`), tracker, fine anticipata e memoria. Gli stati Git e le mancate autorizzazioni descritti sotto sono ricognizioni storiche precedenti alla pubblicazione. Questo successivo aggiornamento documentale registra l’esito; alla ripresa controllare HEAD e sincronizzazione effettivi con Git. Le prove iPhone della fine anticipata restano pendenti.
 
 Aggiornato il **15 ottobre 2026**, America/New_York. Quadro sintetico; dettagli verificabili in [CURRENT_STATE.md](CURRENT_STATE.md), ripresa in [NEXT_SESSION.md](NEXT_SESSION.md). Nessuna percentuale di completamento stimata.
 

@@ -1,6 +1,6 @@
 # FAIRWAY IQ — development log
 
-> Aggiornamento successivo del 15 ottobre 2026: l’utente ha autorizzato commit e push con «fai tutto». Le indicazioni di mancata autorizzazione nei checkpoint precedenti sotto sono storiche. Tracker, fine anticipata e memoria vengono inclusi nel nuovo checkpoint; le prove iPhone della fine anticipata restano pendenti. Verificare hash e sincronizzazione effettivi con Git alla ripresa.
+> Checkpoint pubblicato il 15 ottobre 2026: push su `origin/main` riuscito fino a **c40c396**, comprendente autenticazione (`75eced0`), tracker, fine anticipata e memoria. Gli stati Git e le mancate autorizzazioni descritti sotto sono ricognizioni storiche precedenti alla pubblicazione. Questo successivo aggiornamento documentale registra l’esito; alla ripresa controllare HEAD e sincronizzazione effettivi con Git. Le prove iPhone della fine anticipata restano pendenti.
 
 Registrare progressi datati, evidenze, limiti e decisioni; non inserire segreti o contenuti di ambiente privati. Lo stato corrente è in [CURRENT_STATE.md](CURRENT_STATE.md), l'azione successiva in [NEXT_SESSION.md](NEXT_SESSION.md). Le voci storiche non sostituiscono nuove verifiche.
 
@@ -41,3 +41,8 @@ Prossima azione precisa: caricare la versione aggiornata su iPhone e seguire il 
 ## 15 ottobre 2026 — checkpoint e pubblicazione autorizzati
 
 L’utente ha successivamente richiesto «fai tutto», autorizzando commit e push delle modifiche pendenti. Riesaminati branch, file e whitespace; i 69 test mobile, typecheck e lint erano già passati in questa sessione e il codice non è stato modificato dopo quei controlli. Nessun test ripetuto senza necessità. Controllare staged diff, assenza di segreti/artifact e whitespace prima del commit. Il commit include tracker locale, fine anticipata, test e memoria; l’autenticazione era già nel commit locale 75eced0. Push previsto su origin/main, senza force; l’esito definitivo è verificabile tramite Git e il rapporto finale. Rimane da testare su iPhone la fine anticipata; nessuna migrazione o nuova funzionalità aggiunta durante questa pubblicazione.
+
+
+### Esito della pubblicazione
+
+Creato `c40c396` — `feat(mobile): persist rounds and support early finish`. Controllo whitespace staged e scansione dei file staged per credenziali/artifact superati; `.env` esclusi. `git push origin main` completato con successo, avanzando il remoto da `774e8d7` a `c40c396`: incluso anche il precedente commit locale di autenticazione `75eced0`. Questo aggiornamento documentale salva l’esito confermato e sarà incluso in un ulteriore commit di memoria nella stessa pubblicazione autorizzata. Nessun cambiamento funzionale dopo i 69 test passati. Prossimo task invariato: test iPhone della fine anticipata.
