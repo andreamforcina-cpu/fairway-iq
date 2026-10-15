@@ -20,6 +20,7 @@ export interface HoleScore {
 }
 export interface Round {
   courseName: string;
+  /** Planned length; holes contains only the played prefix for rounds ended early. */
   holeCount: HoleCount;
   holes: HoleScore[];
 }

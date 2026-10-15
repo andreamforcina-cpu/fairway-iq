@@ -97,3 +97,37 @@ test('relative score formatting handles unplayed, even, over, and under par', ()
   assert.equal(formatRelativeScore(2), '+2');
   assert.equal(formatRelativeScore(-2), '-2');
 });
+
+test('early finish includes only played holes and their par, retaining planned length', () => {
+  for (const count of [9, 18]) {
+    const draft = createRound('Pine', count);
+    draft.holes[0] = { number: 1, par: '4', strokes: '5', putts: '2' };
+    draft.holes[1] = { number: 2, par: '3', strokes: '2', putts: '0' };
+    const round = finishRound(draft, true);
+    assert.equal(round.holeCount, count);
+    assert.equal(round.holes.length, 2);
+    assert.deepEqual(roundTotals(round), { strokes: 7, par: 7, putts: 2, scoredHoles: 2, completedHoles: 2, relativeToPar: 0 });
+    assert.equal(draft.holes.length, count);
+    assert.equal(draft.holes[2].strokes, '');
+    assert.throws(() => finishRound(draft)); // Full-round validation is preserved.
+  }
+});
+
+test('early finish rejects empty rounds, incomplete played scores, and skipped holes', () => {
+  const draft = createRound('Pine', 9);
+  assert.throws(() => finishRound(draft, true), /at least one/);
+  draft.holes[0].strokes = '4';
+  assert.throws(() => finishRound(draft, true), /hole 1/);
+  draft.holes[0].putts = '5';
+  assert.throws(() => finishRound(draft, true), /hole 1/);
+  draft.holes[0].putts = '0';
+  assert.equal(finishRound(draft, true).holes.length, 1);
+  draft.holes[2].strokes = '3'; draft.holes[2].putts = '1';
+  assert.throws(() => finishRound(draft, true), /hole 2/);
+});
+
+test('ending early with all holes played matches a full round', () => {
+  const draft = createRound('Pine', 9);
+  draft.holes.forEach(h => { h.strokes = '4'; h.putts = '2'; });
+  assert.deepEqual(finishRound(draft, true), finishRound(draft));
+});

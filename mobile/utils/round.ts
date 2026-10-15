@@ -43,11 +43,19 @@ export function previewTotals(holes: HoleDraft[]): ScoreTotals {
   }
   return { strokes, par, putts, scoredHoles, completedHoles, relativeToPar: scoredHoles ? strokes - par : null };
 }
-export function finishRound(draft: RoundDraft): Round {
+/** Last hole with score input; default par alone does not mean a hole was played. */
+export function playedHoleCount(draft: RoundDraft): number {
+  return draft.holes.reduce((last, hole, index) => hole.strokes !== '' || hole.putts !== '' ? index + 1 : last, 0);
+}
+export function finishRound(draft: RoundDraft, allowPartial = false): Round {
   const error = validateCourseName(draft.courseName);
   if (error) throw new Error(error);
   if ((draft.holeCount !== 9 && draft.holeCount !== 18) || draft.holes.length !== draft.holeCount) throw new Error('Round must contain 9 or 18 holes.');
-  const holes: HoleScore[] = draft.holes.map((hole, index) => {
+  const invalidSequence = draft.holes.findIndex((hole, index) => hole.number !== index + 1);
+  if (invalidSequence !== -1) throw new Error(`Invalid sequence for hole ${invalidSequence + 1}.`);
+  const count = allowPartial ? playedHoleCount(draft) : draft.holeCount;
+  if (!count) throw new Error('Complete at least one hole before finishing.');
+  const holes: HoleScore[] = draft.holes.slice(0, count).map((hole, index) => {
     if (hole.number !== index + 1 || Object.keys(holeErrors(hole)).length) throw new Error(`Complete valid scores for hole ${index + 1}.`);
     return { number: hole.number, par: Number(hole.par), strokes: Number(hole.strokes), putts: Number(hole.putts) };
   });
