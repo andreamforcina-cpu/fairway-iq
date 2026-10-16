@@ -1,6 +1,6 @@
 # FAIRWAY IQ for iPhone
 
-Welcome, five-tab navigation, sample dashboard and local round tracker. Registration and login connect to backend sessions; native refresh tokens use SecureStore and access tokens stay in memory. Browser sessions stay in memory and do not survive reload. Performance data remains illustrative. See [mobile authentication](../docs/mobile-authentication.md) for setup, verification and limitations.
+Welcome, five-tab navigation, dashboard from locally saved rounds and local round tracker. Registration and login connect to backend sessions; native refresh tokens use SecureStore and access tokens stay in memory. Browser sessions stay in memory and do not survive reload. Home separates complete 9/18-hole averages and lists partial rounds; fairways, greens and handicap are not recorded or calculated. See [mobile authentication](../docs/mobile-authentication.md) for setup, verification and limitations.
 
 ```sh
 npm ci
