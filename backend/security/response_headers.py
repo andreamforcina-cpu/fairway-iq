@@ -1,4 +1,4 @@
-"""Prevent storage of account responses, including validation and throttle failures."""
+"""Prevent storage of account and private round responses, including handled errors."""
 from starlette.datastructures import MutableHeaders
 from starlette.types import ASGIApp, Message, Receive, Scope, Send
 
@@ -8,7 +8,9 @@ class AuthResponseHeadersMiddleware:
         self.app = app
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
-        if scope['type'] != 'http' or not scope.get('path', '').startswith('/auth/'):
+        path = scope.get('path', '')
+        private = path.startswith('/auth/') or path == '/rounds' or path.startswith('/rounds/')
+        if scope['type'] != 'http' or not private:
             await self.app(scope, receive, send)
             return
 

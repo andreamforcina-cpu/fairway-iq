@@ -3,6 +3,7 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.exception_handlers import request_validation_exception_handler
 from fastapi.responses import JSONResponse
 
+from backend.api.rounds import router as rounds_router
 from backend.api.auth import router as auth_router
 from backend.api.sessions import router as session_router
 from backend.security.rate_limits import AuthRateLimiter, AuthRateLimitMiddleware
@@ -34,10 +35,13 @@ def health_check():
 
 app.include_router(auth_router)
 app.include_router(session_router)
+app.include_router(rounds_router)
 
 
 @app.exception_handler(RequestValidationError)
 async def safe_auth_validation(request: Request, error: RequestValidationError):
+    if request.url.path == '/rounds' or request.url.path.startswith('/rounds/'):
+        return JSONResponse(status_code=422, content={'detail': 'Invalid round data.'})
     if request.url.path not in {'/auth/register', '/auth/login', '/auth/token', '/auth/refresh', '/auth/logout', '/auth/me'}:
         return await request_validation_exception_handler(request, error)
     # FastAPI's default errors echo rejected input, including plaintext passwords.

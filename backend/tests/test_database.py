@@ -73,9 +73,10 @@ def test_user_metadata_and_email_normalization():
 def test_initial_migration_metadata_and_offline_sql():
     config = migration_config()
     scripts = ScriptDirectory.from_config(config)
-    assert scripts.get_heads() == ['0002_create_auth_sessions']
+    assert scripts.get_heads() == ['0003_create_golf_rounds']
     assert scripts.get_revision('0001_create_users').down_revision is None
-    assert scripts.get_revision('head').down_revision == '0001_create_users'
+    assert scripts.get_revision('0002_create_auth_sessions').down_revision == '0001_create_users'
+    assert scripts.get_revision('head').down_revision == '0002_create_auth_sessions'
     sql = StringIO()
     config.output_buffer = sql
     command.upgrade(config, 'head', sql=True)
