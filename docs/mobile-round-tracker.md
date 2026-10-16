@@ -1,5 +1,7 @@
 # Round Tracker
 
+> Account-owned API persistence was implemented on 2026-10-16. Signed-in rounds now use per-account/per-server caching and authenticated APIs; preview keeps legacy local data separate. See [current integration contract and pending device checklist](mobile-account-rounds.md). Earlier local-only statements below describe historical checkpoints.
+
 The Rounds tab now supports course setup, 9 or 18 holes, hole-by-hole par/strokes/putts entry, a running score, and a completed scorecard, automatic draft saving, and local round history. Existing dashboard data remains a separate sample preview and is not updated by these rounds.
 
 ## State and components
