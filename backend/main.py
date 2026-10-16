@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from backend.api.auth import router as auth_router
 from backend.api.sessions import router as session_router
 from backend.security.rate_limits import AuthRateLimiter, AuthRateLimitMiddleware
+from backend.security.response_headers import AuthResponseHeadersMiddleware
 
 app = FastAPI(
     title="FAIRWAY IQ API",
@@ -15,6 +16,7 @@ app = FastAPI(
 
 auth_rate_limiter = AuthRateLimiter()
 app.add_middleware(AuthRateLimitMiddleware, limiter=auth_rate_limiter)
+app.add_middleware(AuthResponseHeadersMiddleware)
 
 
 @app.get("/")

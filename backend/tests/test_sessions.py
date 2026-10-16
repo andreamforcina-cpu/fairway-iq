@@ -79,3 +79,17 @@ def test_login_and_token_share_rate_limit():
         assert limiter.check('/auth/token', 'peer') is None
     assert limiter.check('/auth/login', 'peer') == 60
     assert limiter.check('/auth/token', 'peer') == 60
+
+
+def test_token_validation_rejects_unsupported_purpose():
+    refresh = new_token('refresh')
+    assert not valid_token(refresh, 'unsupported')
+    with pytest.raises(ValueError):
+        new_token('unsupported')
+
+
+@pytest.mark.parametrize('token', ['', 'fiqa_' + 'a' * 42, 'fiqa_' + 'a' * 44,
+                                   'fiqa_' + 'a' * 42 + '\n', 'fiqa_' + 'é' * 43,
+                                   'fiqa_' + 'a' * 43 + ' '])
+def test_access_token_shape_is_exact(token):
+    assert not valid_token(token, 'access')

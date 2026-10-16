@@ -7,6 +7,12 @@ from email_validator import EmailNotValidError, validate_email
 from pydantic import BaseModel, ConfigDict, SecretStr, field_validator
 
 
+def valid_password_unicode(password: str) -> bool:
+    # JSON may carry isolated UTF-16 surrogates; Argon2 requires encodable UTF-8.
+    # Reject these before native hashing or database access, without normalizing secrets.
+    return not any(0xD800 <= ord(character) <= 0xDFFF for character in password)
+
+
 class RegistrationRequest(BaseModel):
     model_config = ConfigDict(extra='forbid', hide_input_in_errors=True)
 
@@ -39,7 +45,7 @@ class RegistrationRequest(BaseModel):
     @classmethod
     def valid_password(cls, value: SecretStr) -> SecretStr:
         password = value.get_secret_value()
-        if not 15 <= len(password) <= 128 or password.isspace():
+        if not 15 <= len(password) <= 128 or password.isspace() or not valid_password_unicode(password):
             raise ValueError('Password must contain 15–128 characters.')
         return value
 
@@ -68,7 +74,8 @@ class LoginRequest(BaseModel):
     @classmethod
     def valid_password(cls, value: SecretStr) -> SecretStr:
         # Login accepts shorter guesses; registration policy is not reapplied here.
-        if not 1 <= len(value.get_secret_value()) <= 128:
+        password = value.get_secret_value()
+        if not 1 <= len(password) <= 128 or not valid_password_unicode(password):
             raise ValueError('Password must contain 1–128 characters.')
         return value
 

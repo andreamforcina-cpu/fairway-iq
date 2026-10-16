@@ -39,6 +39,8 @@ def test_registration_success_and_safe_response(api):
     result = client.post('/auth/register', json=PAYLOAD)
     assert result.status_code == 201
     assert set(result.json()) == {'id', 'full_name', 'email', 'created_at'}
+    assert result.headers['Cache-Control'] == 'no-store'
+    assert result.headers['Pragma'] == 'no-cache'
     assert result.json()['email'] == 'john@example.com'
     assert result.json()['full_name'] == 'John Smith'
     user = session.add.call_args.args[0]

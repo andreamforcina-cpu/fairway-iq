@@ -14,6 +14,8 @@ def new_token(purpose: str) -> str:
 
 
 def valid_token(token: str, purpose: str) -> bool:
+    if purpose not in {'access', 'refresh'}:
+        return False
     prefix = 'fiqa_' if purpose == 'access' else 'fiqr_'
     return re.fullmatch(prefix + r'[A-Za-z0-9_-]{43}', token) is not None
 

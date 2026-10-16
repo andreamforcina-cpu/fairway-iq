@@ -61,6 +61,7 @@ def test_throttle_response_and_forwarded_headers_cannot_bypass_it(path):
             assert response.json() == {'detail': 'Too many requests. Please try again later.'}
             assert int(response.headers['Retry-After']) > 0
             assert response.headers['Cache-Control'] == 'no-store'
+            assert response.headers['Pragma'] == 'no-cache'
             assert 'private-marker' not in response.text
             session.execute.assert_not_called()
             session.add.assert_not_called()
