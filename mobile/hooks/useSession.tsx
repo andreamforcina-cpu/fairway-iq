@@ -1,13 +1,20 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 import { AppState } from 'react-native';
 import { createSessionManager } from '../services/sessionManager';
 import type { SessionState } from '../services/sessionManager';
 import { sessionApi } from '../services/sessionApi';
 import { sessionStorage } from '../services/sessionStorage';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { baseUrl } from '../services/api';
+import { createRoundApi } from '../services/roundApi';
+import { createAccountRoundStore } from '../services/accountRoundStore';
+import { roundLibraryStore } from '../services/roundLibraryStore';
+import type { RoundStorage } from '../services/roundStore';
 
 type SessionContext = SessionState & {
   preview: boolean; startPreview(): void;
+  rounds: RoundStorage;
   login(email: string, password: string): Promise<void>;
   logout(): Promise<void>;
 };
@@ -19,6 +26,13 @@ export function SessionProvider({ children }: PropsWithChildren) {
     setState(next);
     if (next.user) setPreview(false);
   }));
+  const owner = state.user?.id;
+  const rounds = useMemo(() => {
+    if (!owner) return roundLibraryStore;
+    const server = baseUrl();
+    return createAccountRoundStore(AsyncStorage, server, owner,
+      createRoundApi(work => manager.authorized(owner, work), server));
+  }, [owner, manager]);
   useEffect(() => {
     void manager.restore();
     const listener = AppState.addEventListener('change', status => {
@@ -29,7 +43,7 @@ export function SessionProvider({ children }: PropsWithChildren) {
     }, 60000);
     return () => { listener.remove(); clearInterval(timer); };
   }, [manager]);
-  return <Context.Provider value={{ ...state, preview, startPreview: () => setPreview(true), login: manager.login, logout: async () => { setPreview(false); await manager.logout(); } }}>{children}</Context.Provider>;
+  return <Context.Provider value={{ ...state, preview, rounds, startPreview: () => setPreview(true), login: manager.login, logout: async () => { setPreview(false); await manager.logout(); } }}>{children}</Context.Provider>;
 }
 export function useSession() {
   const value = useContext(Context);

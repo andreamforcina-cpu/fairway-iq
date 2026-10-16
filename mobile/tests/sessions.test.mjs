@@ -156,3 +156,48 @@ test('queued revalidation after logout cannot restore the previous profile', asy
   assert.equal(f.states.at(-1).user, null); assert.equal(f.saved(), null);
   assert.equal(f.calls.filter(call => call[0] === 'me').length, 1);
 });
+
+test('authorized round request refreshes once and never publishes tokens', async () => {
+  const f = fixture(); await f.manager.login('', ''); f.advance();
+  const calls = [];
+  const result = await f.manager.authorized(profile.id, async token => { calls.push(token); return 'round'; });
+  assert.equal(result, 'round'); assert.deepEqual(calls, [pair(1).access_token]);
+  assert.equal(f.calls.filter(call => call[0] === 'refresh').length, 1);
+  assert.doesNotMatch(JSON.stringify(f.states), /fiq[ar]_/);
+});
+test('authorized request 401 retries once; ordinary API failures preserve session', async () => {
+  const f = fixture(); await f.manager.login('', ''); let attempts = 0;
+  await f.manager.authorized(profile.id, async () => { if (++attempts === 1) throw new AuthError(401, 'expired'); return null; });
+  assert.equal(attempts, 2);
+  await assert.rejects(f.manager.authorized(profile.id, async () => { throw new AuthError(503, 'unavailable'); }));
+  assert.equal(f.states.at(-1).user.id, profile.id);
+});
+test('authorized refresh failure clears session and does not send expired request', async () => {
+  const f = fixture(); await f.manager.login('', ''); f.advance(); let sent = 0;
+  f.api.refresh = async () => { throw new Error('offline'); };
+  await assert.rejects(f.manager.authorized(profile.id, async () => { sent++; }));
+  assert.equal(sent, 0); assert.equal(f.states.at(-1).user, null); assert.equal(f.saved(), null);
+});
+test('stale account request queued after logout/login never receives replacement token', async () => {
+  const f = fixture(); await f.manager.login('', ''); let sent = 0;
+  const logout = f.manager.logout();
+  f.api.me = async () => ({ ...profile, id: 'different-account' });
+  const login = f.manager.login('', '');
+  const stale = f.manager.authorized(profile.id, async () => { sent++; });
+  await Promise.all([logout, login, assert.rejects(stale)]);
+  assert.equal(sent, 0); assert.equal(f.states.at(-1).user.id, 'different-account');
+});
+test('logout waits for an authorized request; later requests remain signed out', async () => {
+  const f = fixture(); await f.manager.login('', ''); let release;
+  const first = f.manager.authorized(profile.id, async () => new Promise(resolve => { release = resolve; }));
+  await Promise.resolve(); await Promise.resolve();
+  const logout = f.manager.logout();
+  release('done'); await Promise.all([first, logout]);
+  await assert.rejects(f.manager.authorized(profile.id, async () => assert.fail('must not send')));
+});
+test('a second authorized 401 signs out without a refresh loop', async () => {
+  const f = fixture(); await f.manager.login('', ''); let attempts = 0;
+  await assert.rejects(f.manager.authorized(profile.id, async () => { attempts++; throw new AuthError(401, 'expired'); }));
+  assert.equal(attempts, 2); assert.equal(f.states.at(-1).user, null);
+  assert.equal(f.calls.filter(call => call[0] === 'refresh').length, 1);
+});

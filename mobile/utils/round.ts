@@ -3,7 +3,7 @@ import type { HoleCount, HoleDraft, HoleField, HoleScore, Round, RoundDraft, Sco
 export function validateCourseName(value: string): string | undefined {
   if (!value.trim()) return 'Enter a golf course name.';
   if (value.trim().length > 100) return 'Use 100 characters or fewer.';
-  if (/[\u0000-\u001f\u007f]/.test(value)) return 'Use a single line without control characters.';
+  if (/\p{C}/u.test(value)) return 'Use a single line without control characters.';
   return undefined;
 }
 export function parseScore(value: string, min: number, max: number): number | null {

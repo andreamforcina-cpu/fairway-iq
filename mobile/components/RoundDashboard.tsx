@@ -6,22 +6,29 @@ import { ProfileAvatar } from './ProfileAvatar';
 import { theme } from '../constants/theme';
 import { useEntrance } from '../hooks/useEntrance';
 import { useSavedRounds } from '../hooks/useSavedRounds';
+import { useSession } from '../hooks/useSession';
 import { dashboardSummary } from '../utils/dashboard';
 import { formatRelativeScore, roundTotals } from '../utils/round';
 import type { HoleCount } from '../types/round';
 
 export function RoundDashboard() {
+  const { user, preview } = useSession();
+  return <ScopedDashboard key={user?.id ?? (preview ? 'preview' : 'signed-out')} account={!!user} />;
+}
+function ScopedDashboard({ account }: { account: boolean }) {
   const [period, setPeriod] = useState<'latest' | 'recent'>('latest');
   const [holeCount, setHoleCount] = useState<HoleCount>(9);
-  const { history, loading, error, reload } = useSavedRounds();
+  const { history, loading, error, reload, notice } = useSavedRounds();
   const entrance = useEntrance();
   const data = dashboardSummary(history ?? [], holeCount, period);
   const metric = (value: number | null) => value === null ? '—' : value.toFixed(1);
   return <Screen>
     <View style={local.row}><Brand /><ProfileAvatar /></View>
-    <AppText style={styles.eyebrow}>ROUNDS ON THIS DEVICE</AppText>
+    <AppText style={styles.eyebrow}>{account ? 'YOUR ACCOUNT ROUNDS' : 'ROUNDS ON THIS DEVICE'}</AppText>
     <View><AppText style={styles.muted}>Your performance</AppText><AppText accessibilityRole="header" style={styles.heading}>Make your next{'\n'}round count.</AppText></View>
-    <AppText style={styles.muted}>Local rounds are shared across accounts and preview on this device. They are not synced to your account.</AppText>
+    <AppText style={styles.muted}>{account ? 'Your account rounds and any local copies pending sync. Shared legacy rounds remain in sample preview.' : 'Preview rounds stay on this device and are not synced to an account.'}</AppText>
+    {notice ? <Card><AppText accessibilityLiveRegion="polite">{notice}</AppText><Button label="Retry account sync" onPress={reload} /></Card> : null}
+    {account && !loading ? <Button label="Refresh account rounds" onPress={reload} /> : null}
     {loading ? <AppText accessibilityLiveRegion="polite">Loading saved rounds…</AppText> : error ? <Card><AppText accessibilityLiveRegion="polite">Unable to read saved rounds. Your data has been kept.</AppText><Button label="Retry loading" onPress={reload} /></Card> : <>
       <Animated.View style={[entrance, { gap: 16 }]}>
         <Card><AppText style={styles.eyebrow}>COMPLETE ROUNDS</AppText>

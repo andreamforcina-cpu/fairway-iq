@@ -5,7 +5,9 @@ type Api = { login(email: string, password: string): Promise<TokenPair>; refresh
 export type SessionState = { loading: boolean; user: Profile | null; message: string };
 
 /** One queue owns all token/storage mutations. Tokens never enter React state. */
-export function createSessionManager(api: Api, storage: Storage, changed: (state: SessionState) => void, now = Date.now) {
+export function createSessionManager(api: Api, storage: Storage, onChanged: (state: SessionState) => void, now = Date.now) {
+  let userId: string | null = null;
+  function changed(state: SessionState) { userId = state.user?.id ?? null; onChanged(state); }
   let tokens: TokenPair | null = null;
   let expiresAt = 0;
   let queue: Promise<unknown> = Promise.resolve();
@@ -44,6 +46,24 @@ export function createSessionManager(api: Api, storage: Storage, changed: (state
     if (token) await revoke(token);
   }
   return {
+    /** Serialized with logout/login; stale account work can never borrow another account's token. */
+    authorized: <T>(owner: string, work: (access: string) => Promise<T>): Promise<T> => serial(async () => {
+      if (!tokens || userId !== owner) throw new Error('Please log in to this account again.');
+      try {
+        if (now() >= expiresAt - 30000) await rotate(tokens.refresh_token);
+      } catch { await fail(); throw new Error('Please log in again.'); }
+      try { return await work(tokens!.access_token); }
+      catch (error) {
+        if (!(error && typeof error === 'object' && 'status' in error && error.status === 401)) throw error;
+        try { await rotate(tokens!.refresh_token); }
+        catch { await fail(); throw new Error('Please log in again.'); }
+        try { return await work(tokens!.access_token); }
+        catch (retryError) {
+          if (retryError && typeof retryError === 'object' && 'status' in retryError && retryError.status === 401) await fail();
+          throw retryError;
+        }
+      }
+    }),
     restore: () => serial(async () => {
       try {
         const saved = await storage.read();

@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import { randomUUID } from 'expo-crypto';
+import { useSession } from '../hooks/useSession';
 import { useRoundLibrary } from '../hooks/useRoundLibrary';
 import { completeRound } from '../services/roundStore';
 import { Keyboard, KeyboardAvoidingView, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
@@ -11,6 +13,11 @@ import type { HoleCount, HoleField, Round, RoundDraft } from '../types/round';
 const storageNotice = 'Rounds stay on this device and are shared across accounts and sample preview. They are not synced to your account.';
 
 export default function RoundsScreen() {
+  const { user, preview } = useSession();
+  // Remount all draft/summary/form state when the account or preview scope changes.
+  return <ScopedRounds key={user?.id ?? (preview ? 'preview' : 'signed-out')} account={!!user} />;
+}
+function ScopedRounds({ account }: { account: boolean }) {
   const [course, setCourse] = useState('');
   const [holeCount, setHoleCount] = useState<HoleCount>(9);
   const { library, setLibrary, message, saving, loading, load, retrySave } = useRoundLibrary();
@@ -46,7 +53,7 @@ export default function RoundsScreen() {
     setAttemptedFinish(true);
     const invalid = draft.holes.slice(0, count).findIndex(hole => Object.keys(holeErrors(hole)).length > 0);
     if (invalid !== -1) { setCurrent(invalid); setError(`Complete strokes and putts for hole ${invalid + 1}. Unplayed holes at the end can be left blank.`); return; }
-    if (!library || library.history.length >= 1000) { setError('This device has reached its 1,000-round limit.'); return; }
+    if (!library || (library.history.length >= 1000 && (!account || !library.history.some(entry => entry.serverId)))) { setError('This device has reached its 1,000-round limit. Sync pending rounds before adding more.'); return; }
     if (count < draft.holeCount) { setConfirmEarly(true); setError(''); return; }
     saveFinished();
   }
@@ -54,7 +61,8 @@ export default function RoundsScreen() {
     if (!draft) return;
     const completed = finishRound(draft, true);
     const completedAt = new Date().toISOString();
-    setLibrary(previous => previous?.draft ? completeRound(previous, completedAt, true) : previous);
+    const submissionId = account ? randomUUID() : undefined;
+    setLibrary(previous => previous?.draft ? completeRound(previous, completedAt, true, submissionId) : previous);
     setConfirmEarly(false); setSummary(completed); setError('');
   }
   function reset() {
@@ -71,7 +79,7 @@ export default function RoundsScreen() {
   </Screen>;
 
   return <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}><Screen keyboardShouldPersistTaps="handled">
-    <AppText style={styles.eyebrow}>ROUND TRACKER</AppText><AppText accessibilityRole="header" style={styles.heading}>{summary ? 'Round complete.' : draft ? draft.courseName : 'Start your round.'}</AppText><AppText style={styles.muted}>{storageNotice}</AppText><AppText accessibilityLiveRegion="polite" style={styles.muted}>{saving ? 'Saving on this device…' : message || 'Saved on this device'}</AppText>{message ? <Button label="Retry saving" onPress={retrySave} /> : null}
+    <AppText style={styles.eyebrow}>ROUND TRACKER</AppText><AppText accessibilityRole="header" style={styles.heading}>{summary ? 'Round complete.' : draft ? draft.courseName : 'Start your round.'}</AppText><AppText style={styles.muted}>{account ? 'Completed rounds sync to your account. Drafts stay on this device. Older shared local rounds remain separate in sample preview.' : storageNotice}</AppText><AppText accessibilityLiveRegion="polite" style={styles.muted}>{saving ? (account ? 'Saving and syncing…' : 'Saving on this device…') : message || (account ? 'Saved · completed rounds synced to your account' : 'Saved on this device')}</AppText>{message ? <Button label={account ? "Retry saving and sync" : "Retry saving"} onPress={retrySave} /> : null}
     {!draft && !summary ? <><Card><AppText style={styles.muted}>Golf course name</AppText><TextInput accessibilityLabel="Golf course name" value={course} onChangeText={value => { setCourse(value); setError(''); }} maxLength={100} placeholder="Enter your course" placeholderTextColor={theme.colors.muted} selectionColor={theme.colors.accent} autoCapitalize="words" returnKeyType="done" onSubmitEditing={Keyboard.dismiss} style={local.input} />
       <AppText style={styles.muted}>Number of holes</AppText><View style={local.row}>{([9, 18] as const).map(count => <Pressable key={count} accessibilityRole="button" accessibilityState={{ selected: holeCount === count }} onPress={() => setHoleCount(count)} style={[local.choice, holeCount === count ? local.selected : undefined]}><AppText style={{ color: holeCount === count ? '#000' : '#fff' }}>{count} holes</AppText></Pressable>)}</View>
       <AppText style={styles.muted}>Each hole starts at par 4. Adjust it to match your course.</AppText></Card>{error ? <AppText accessibilityLiveRegion="polite" style={local.error}>{error}</AppText> : null}<Button label="Start Round" onPress={start} /></> : summary && summaryTotals ? <>
@@ -86,9 +94,10 @@ export default function RoundsScreen() {
       <View style={local.row}>{current > 0 ? <View style={{ flex: 1 }}><Button label="Previous hole" onPress={() => { Keyboard.dismiss(); setCurrent(current - 1); }} /></View> : null}{current < draft.holeCount - 1 ? <View style={{ flex: 1 }}><Button label="Next hole" onPress={() => { Keyboard.dismiss(); setCurrent(current + 1); }} /></View> : null}</View>
       <Button label="Finish Round" onPress={finish} />
     </> : null}
+    {account ? <Button label="Refresh account rounds" onPress={load} disabled={saving || loading} /> : null}
     {!summary ? <Card><AppText accessibilityRole="header" style={local.sectionTitle}>Round history</AppText>{library.history.length === 0 ? <AppText style={styles.muted}>Completed rounds will appear here.</AppText> : library.history.map(entry => {
       const score = roundTotals(entry.round);
-      return <Pressable key={entry.id} accessibilityRole="button" accessibilityLabel={`View ${entry.round.courseName}, ${entry.round.holes.length} of ${entry.round.holeCount} holes played, ${score.strokes} strokes`} onPress={() => { Keyboard.dismiss(); setSummary(entry.round); }} style={local.historyRow}><AppText>{entry.round.courseName} · {entry.round.holes.length}/{entry.round.holeCount} holes played</AppText><AppText style={styles.muted}>{new Date(entry.completedAt).toLocaleDateString()} · {score.strokes} strokes · {formatRelativeScore(score.relativeToPar)}</AppText></Pressable>;
+      return <Pressable key={entry.id} accessibilityRole="button" accessibilityLabel={`View ${entry.round.courseName}, ${entry.round.holes.length} of ${entry.round.holeCount} holes played, ${score.strokes} strokes`} onPress={() => { Keyboard.dismiss(); setSummary(entry.round); }} style={local.historyRow}><AppText>{entry.round.courseName} · {entry.round.holes.length}/{entry.round.holeCount} holes played</AppText><AppText style={styles.muted}>{new Date(entry.completedAt).toLocaleDateString()} · {score.strokes} strokes · {formatRelativeScore(score.relativeToPar)}{account ? (entry.serverId ? ' · Synced' : ' · Pending sync') : ''}</AppText></Pressable>;
     })}</Card> : <Button label={draft ? 'Back to current round' : 'Back to rounds'} onPress={() => setSummary(null)} />}
   </Screen></KeyboardAvoidingView>;
 }

@@ -1,18 +1,31 @@
 import { finishRound, validateCourseName } from '../utils/round';
 import type { Round, RoundDraft } from '../types/round';
 
-export interface SavedRound { id: string; completedAt: string; round: Round }
+export interface SavedRound { id: string; completedAt: string; round: Round; serverId?: string }
+export interface RoundStorage {
+  load(): Promise<RoundLibrary>;
+  save(library: RoundLibrary, retry?: boolean): Promise<unknown>;
+  readonly notice?: string;
+}
+export const isUuid = (value: unknown): value is string => typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(value);
 export interface RoundLibrary { version: 1; draft: RoundDraft | null; current: number; history: SavedRound[] }
 export const emptyLibrary = (): RoundLibrary => ({ version: 1, draft: null, current: 0, history: [] });
-export function completeRound(library: RoundLibrary, completedAt: string, allowPartial = false): RoundLibrary {
+export function completeRound(library: RoundLibrary, completedAt: string, allowPartial = false, submissionId?: string): RoundLibrary {
   if (!library.draft) throw new Error('No active round');
-  if (library.history.length >= 1000) throw new Error('Round history is full');
+  let history = library.history;
+  if (history.length >= 1000) {
+    // Account history is a bounded cache; an acknowledged copy remains recoverable on the server.
+    const evict = submissionId ? [...history].reverse().find(entry => entry.serverId) : undefined;
+    if (!evict) throw new Error('Round history is full');
+    history = history.filter(entry => entry.id !== evict.id);
+  }
   if (!Number.isFinite(Date.parse(completedAt))) throw new Error('Invalid completion date');
   let suffix = 0;
-  let id = completedAt;
+  if (submissionId !== undefined && (!isUuid(submissionId) || library.history.some(entry => entry.id === submissionId))) throw new Error('Invalid submission ID');
+  let id = submissionId ?? completedAt;
   while (library.history.some(entry => entry.id === id)) id = `${completedAt}-${++suffix}`;
   const entry = { id, completedAt, round: finishRound(library.draft, allowPartial) };
-  return { version: 1, draft: null, current: 0, history: [entry, ...library.history] };
+  return { version: 1, draft: null, current: 0, history: [entry, ...history] };
 }
 const object = (value: unknown): value is Record<string, unknown> => !!value && typeof value === 'object' && !Array.isArray(value);
 function draft(value: unknown): RoundDraft {
@@ -41,14 +54,14 @@ export function decodeLibrary(raw: string | null): RoundLibrary {
     const planned = entry.round.holeCount;
     if ((planned !== 9 && planned !== 18) || holes.length < 1 || holes.length > planned) throw new Error('Invalid completed hole count');
     const padded = [...holes, ...Array.from({ length: planned - holes.length }, (_, index) => ({ number: holes.length + index + 1, par: '4', strokes: '', putts: '' }))];
-    return { id: entry.id, completedAt: entry.completedAt, round: finishRound(draft({ ...entry.round, holes: padded }), true) };
+    if (entry.serverId !== undefined && !isUuid(entry.serverId)) throw new Error('Invalid server round ID');
+    return { id: entry.id, completedAt: entry.completedAt, round: finishRound(draft({ ...entry.round, holes: padded }), true), ...(entry.serverId === undefined ? {} : { serverId: entry.serverId }) };
   });
   return { version: 1, draft: active, current: value.current as number, history };
 }
 
 /** Serialize reads and snapshots so storage operations cannot overtake each other. */
-export function createRoundStore(storage: { getItem(key: string): Promise<string | null>; setItem(key: string, value: string): Promise<unknown> }) {
-  const key = 'fairway-iq.rounds.v1';
+export function createRoundStore(storage: { getItem(key: string): Promise<string | null>; setItem(key: string, value: string): Promise<unknown> }, key = 'fairway-iq.rounds.v1') {
   let queue: Promise<unknown> = Promise.resolve();
   return {
     load() {
