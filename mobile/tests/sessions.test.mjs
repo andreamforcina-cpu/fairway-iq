@@ -120,3 +120,39 @@ test('web sessions never touch native or browser persistence', async () => {
   assert.equal(storageHarness.saved, null); assert.equal(storageHarness.deleted, before);
   storageHarness.os = 'ios';
 });
+
+test('registration preserves exact password and sends only the backend allowlisted fields', async t => {
+  const fetch = t.mock.method(globalThis, 'fetch', async () => ({ ok: true, status: 201, json: async () => profile }));
+  await sessionApi.register(' Test Golfer ', ' golfer@example.test ', ' synthetic password ');
+  const [url, options] = fetch.mock.calls[0].arguments;
+  assert.equal(url, 'https://example.test/auth/register');
+  assert.deepEqual(JSON.parse(options.body), { full_name: 'Test Golfer', email: 'golfer@example.test', password: ' synthetic password ' });
+});
+test('auth transport failures are safe and never automatically retry', async t => {
+  const fetch = t.mock.method(globalThis, 'fetch', async () => { throw new Error('synthetic-sensitive-transport-detail'); });
+  await assert.rejects(sessionApi.refresh(pair().refresh_token), error => !error.message.includes('synthetic-sensitive'));
+  assert.equal(fetch.mock.callCount(), 1);
+});
+test('logout 204 does not attempt JSON parsing', async t => {
+  t.mock.method(globalThis, 'fetch', async () => ({ ok: true, status: 204, json: async () => { throw new Error('must not parse'); } }));
+  await sessionApi.logout(pair().refresh_token);
+});
+test('invalid lifetimes fail closed before session installation', async t => {
+  let payload;
+  t.mock.method(globalThis, 'fetch', async () => ({ ok: true, status: 200, json: async () => payload }));
+  for (const change of [{ expires_in: 0 }, { expires_in: 901 }, { expires_in: 1.5 }, { refresh_expires_in: -1 }, { refresh_expires_in: 2592001 }, { token_type: 'other' }]) {
+    payload = { ...pair(), ...change };
+    await assert.rejects(sessionApi.login('golfer@example.test', 'synthetic'), /Unexpected authentication response/);
+  }
+});
+test('storage read failure signs out without contacting token endpoints', async () => {
+  const f = fixture(); f.storage.read = async () => { throw new Error('locked'); };
+  await f.manager.restore();
+  assert.equal(f.calls.length, 0); assert.equal(f.states.at(-1).user, null);
+});
+test('queued revalidation after logout cannot restore the previous profile', async () => {
+  const f = fixture(); await f.manager.login('', '');
+  await Promise.all([f.manager.logout(), f.manager.revalidate(), f.manager.revalidate()]);
+  assert.equal(f.states.at(-1).user, null); assert.equal(f.saved(), null);
+  assert.equal(f.calls.filter(call => call[0] === 'me').length, 1);
+});

@@ -97,3 +97,42 @@ test('stored history rejects zero played holes and holes beyond planned length',
     assert.throws(() => decodeLibrary(JSON.stringify({ ...emptyLibrary(), history: entries })));
   }
 });
+
+test('a pending history read completes before a later save starts', async () => {
+  const events = []; let release;
+  const store = createRoundStore({
+    getItem: async () => { events.push('read started'); await new Promise(resolve => { release = resolve; }); events.push('read finished'); return null; },
+    setItem: async () => { events.push('write'); },
+  });
+  const read = store.load(); await Promise.resolve();
+  const write = store.save(emptyLibrary()); await Promise.resolve(); await Promise.resolve();
+  assert.deepEqual(events, ['read started']);
+  release(); await Promise.all([read, write]);
+  assert.deepEqual(events, ['read started', 'read finished', 'write']);
+});
+test('read failure does not poison subsequent saves or reads', async () => {
+  let raw = null, fail = true;
+  const store = createRoundStore({ getItem: async () => { if (fail) { fail = false; throw new Error('read unavailable'); } return raw; }, setItem: async (_, value) => { raw = value; } });
+  await assert.rejects(store.load(), /read unavailable/);
+  await store.save({ ...emptyLibrary(), history: history() });
+  assert.deepEqual((await store.load()).history, history());
+});
+test('completion rejects invalid dates and the 1000-round limit without mutating draft', () => {
+  const draft = createRound('Boundary', 9); draft.holes[0].strokes = '4'; draft.holes[0].putts = '0';
+  const full = { ...emptyLibrary(), draft, history: Array.from({ length: 1000 }, (_, i) => ({ ...history()[0], id: String(i) })) };
+  const before = JSON.stringify(full);
+  assert.throws(() => completeRound(full, '2026-10-15T12:00:00Z', true), /full/);
+  assert.equal(JSON.stringify(full), before);
+  assert.throws(() => completeRound({ ...emptyLibrary(), draft }, 'invalid-date', true), /date/);
+});
+test('every early-finish length survives round-trip for 9 and 18 holes', () => {
+  for (const planned of [9, 18]) for (let count = 1; count <= planned; count++) {
+    const draft = createRound('Length boundary', planned);
+    draft.holes.slice(0, count).forEach(h => { h.strokes = '5'; h.putts = '0'; });
+    const saved = completeRound({ ...emptyLibrary(), draft }, '2026-10-15T12:00:00Z', true);
+    const restored = decodeLibrary(JSON.stringify(saved));
+    assert.equal(restored.history[0].round.holes.length, count);
+    assert.equal(restored.history[0].round.holeCount, planned);
+    assert.deepEqual(restored, saved);
+  }
+});

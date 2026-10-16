@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { createRoundStore } from '../services/roundStore';
+import { roundLibraryStore as store } from '../services/roundLibraryStore';
 import type { RoundLibrary } from '../services/roundStore';
 
-const store = createRoundStore(AsyncStorage);
 export function useRoundLibrary() {
   const [library, setLibrary] = useState<RoundLibrary | null>(null);
   const [message, setMessage] = useState('Loading saved rounds…');

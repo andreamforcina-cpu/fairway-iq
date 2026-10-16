@@ -44,3 +44,39 @@ test('login requires only email and password, not registration fields or minimum
 test('login rejects missing and oversized passwords', () => {
   for (const password of ['', 'a'.repeat(129)]) assert.ok(validateAuthForm('login', { ...valid, password }).password);
 });
+
+test('Unicode password limits count code points like the backend, without normalization', () => {
+  for (const count of [15, 128]) {
+    const password = '🏌'.repeat(count);
+    assert.deepEqual(validateAuthForm('register', { ...valid, password, confirmPassword: password }), {});
+  }
+  for (const count of [8, 14, 129]) {
+    const password = '🏌'.repeat(count);
+    assert.ok(validateAuthForm('register', { ...valid, password, confirmPassword: password }).password);
+  }
+  assert.equal(validateAuthForm('login', { ...valid, password: '🏌'.repeat(128) }).password, undefined);
+});
+test('Unicode name limits and invisible characters follow backend policy', () => {
+  assert.equal(validateAuthForm('register', { ...valid, fullName: '𐐀'.repeat(100) }).fullName, undefined);
+  assert.ok(validateAuthForm('register', { ...valid, fullName: '𐐀'.repeat(101) }).fullName);
+  for (const fullName of ['Alex\u0085Golfer', 'Alex\u200bGolfer', 'Alex\ue000Golfer']) assert.ok(validateAuthForm('register', { ...valid, fullName }).fullName);
+});
+
+test('isolated UTF-16 surrogates are rejected without rejecting valid supplementary characters', () => {
+  for (const surrogate of ['\ud800', '\udfff']) for (const mode of ['login', 'register']) {
+    const password = valid.password + surrogate;
+    assert.ok(validateAuthForm(mode, { ...valid, password, confirmPassword: password }).password);
+  }
+  const password = '🏌'.repeat(15);
+  assert.deepEqual(validateAuthForm('register', { ...valid, password, confirmPassword: password }), {});
+});
+
+test('registration whitespace policy matches Python without trimming password secrets', () => {
+  for (const character of ['\u001c', '\u0085', '\u2003', ' ']) {
+    const password = character.repeat(15);
+    assert.ok(validateAuthForm('register', { ...valid, password, confirmPassword: password }).password);
+  }
+  // BOM is not Python whitespace; it is allowed as an exact password character.
+  const password = '\ufeff'.repeat(15);
+  assert.equal(validateAuthForm('register', { ...valid, password, confirmPassword: password }).password, undefined);
+});

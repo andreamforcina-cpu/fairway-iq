@@ -16,8 +16,9 @@ export function Card({ children }: PropsWithChildren) {
 export function Brand() {
   return <AppText style={styles.brand}>FAIRWAY <AppText style={{ color: theme.colors.accent }}>IQ</AppText></AppText>;
 }
-export function Button({ label, onPress }: { label: string; onPress: () => void }) {
-  return <Pressable accessibilityRole="button" onPress={onPress} style={({ pressed }) => [styles.button, { opacity: pressed ? 0.8 : 1 }]}><AppText style={styles.buttonText}>{label}</AppText></Pressable>;
+export function Button({ label, onPress, disabled = false, busy = false }: { label: string; onPress: () => void; disabled?: boolean; busy?: boolean }) {
+  const unavailable = disabled || busy;
+  return <Pressable accessibilityRole="button" accessibilityState={{ disabled: unavailable, busy }} disabled={unavailable} onPress={onPress} style={({ pressed }) => [styles.button, { opacity: pressed || unavailable ? 0.8 : 1 }]}><AppText style={styles.buttonText}>{label}</AppText></Pressable>;
 }
 export const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: theme.colors.background },

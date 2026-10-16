@@ -46,12 +46,16 @@ export function decodeLibrary(raw: string | null): RoundLibrary {
   return { version: 1, draft: active, current: value.current as number, history };
 }
 
-/** Serialize snapshots so a slow older write cannot replace newer scores. */
+/** Serialize reads and snapshots so storage operations cannot overtake each other. */
 export function createRoundStore(storage: { getItem(key: string): Promise<string | null>; setItem(key: string, value: string): Promise<unknown> }) {
   const key = 'fairway-iq.rounds.v1';
   let queue: Promise<unknown> = Promise.resolve();
   return {
-    async load() { await queue; return decodeLibrary(await storage.getItem(key)); },
+    load() {
+      const result = queue.then(async () => decodeLibrary(await storage.getItem(key)));
+      queue = result.catch(() => undefined);
+      return result;
+    },
     save(library: RoundLibrary) {
       const raw = JSON.stringify(library);
       decodeLibrary(raw);

@@ -12,6 +12,7 @@ export function HoleScoreCard({ hole, showRequired, onChange }: { hole: HoleDraf
       const error = showRequired || hole[field] !== '' ? errors[field] : undefined;
       return <View key={field} style={local.field}><AppText style={styles.muted}>{label}</AppText><TextInput accessibilityLabel={`Hole ${hole.number} ${label}`} accessibilityHint={error ?? (field === 'putts' ? 'Enter zero if you did not putt.' : undefined)} value={hole[field]} onChangeText={value => onChange(field, value)} keyboardType="number-pad" maxLength={3} placeholder={field === 'par' ? '4' : '—'} placeholderTextColor={theme.colors.muted} selectionColor={theme.colors.accent} style={[local.input, error ? local.invalid : undefined]} /><View>{error ? <AppText accessibilityLiveRegion="polite" style={local.error}>{error}</AppText> : null}</View></View>;
     })}</View><AppText style={styles.muted}>Par: 1–6 · Strokes: 1–30 · Putts: 0–strokes</AppText>
+    <AppText style={styles.muted}>Strokes includes every shot, including putts.</AppText>
   </Card>;
 }
 const local = StyleSheet.create({
