@@ -7,7 +7,7 @@ import { theme } from '../constants/theme';
 import { useEntrance } from '../hooks/useEntrance';
 import { useSavedRounds } from '../hooks/useSavedRounds';
 import { useSession } from '../hooks/useSession';
-import { dashboardSummary } from '../utils/dashboard';
+import { dashboardSummary, performanceSummary } from '../utils/dashboard';
 import { formatRelativeScore, roundTotals } from '../utils/round';
 import type { HoleCount } from '../types/round';
 
@@ -20,13 +20,14 @@ function ScopedDashboard({ account }: { account: boolean }) {
   const [holeCount, setHoleCount] = useState<HoleCount>(9);
   const { history, loading, error, reload, notice } = useSavedRounds();
   const entrance = useEntrance();
-  const data = dashboardSummary(history ?? [], holeCount, period);
+  const data = dashboardSummary(history ?? [], holeCount, period, account ? 'account' : 'local');
+  const exclusions = performanceSummary(history ?? [], holeCount);
   const metric = (value: number | null) => value === null ? '—' : value.toFixed(1);
   return <Screen>
     <View style={local.row}><Brand /><ProfileAvatar /></View>
     <AppText style={styles.eyebrow}>{account ? 'YOUR ACCOUNT ROUNDS' : 'ROUNDS ON THIS DEVICE'}</AppText>
     <View><AppText style={styles.muted}>Your performance</AppText><AppText accessibilityRole="header" style={styles.heading}>Make your next{'\n'}round count.</AppText></View>
-    <AppText style={styles.muted}>{account ? 'Your account rounds and any local copies pending sync. Shared legacy rounds remain in sample preview.' : 'Preview rounds stay on this device and are not synced to an account.'}</AppText>
+    <AppText style={styles.muted}>{account ? 'Statistics use synced account rounds. Pending copies are excluded until confirmed; shared legacy rounds remain in sample preview.' : 'Preview rounds stay on this device and are not synced to an account.'}</AppText>
     {notice ? <Card><AppText accessibilityLiveRegion="polite">{notice}</AppText><Button label="Retry account sync" onPress={reload} /></Card> : null}
     {account && !loading ? <Button label="Refresh account rounds" onPress={reload} /> : null}
     {loading ? <AppText accessibilityLiveRegion="polite">Loading saved rounds…</AppText> : error ? <Card><AppText accessibilityLiveRegion="polite">Unable to read saved rounds. Your data has been kept.</AppText><Button label="Retry loading" onPress={reload} /></Card> : <>
@@ -39,7 +40,8 @@ function ScopedDashboard({ account }: { account: boolean }) {
             <View style={local.stat}><AppText style={styles.muted}>Scoring average</AppText><AppText style={local.statNumber}>{metric(data.score)}</AppText></View>
             <View style={local.stat}><AppText style={styles.muted}>Putts / round</AppText><AppText style={local.statNumber}>{metric(data.putts)}</AppText></View>
           </View>
-          <AppText style={styles.muted}>{data.count ? `Based on ${data.count} complete ${holeCount}-hole round${data.count === 1 ? '' : 's'}. Rounds ended early are excluded.` : `No complete ${holeCount}-hole rounds saved yet. Rounds ended early appear below.`}</AppText>
+          <AppText style={styles.muted}>{data.count ? `Based on ${data.count} complete ${holeCount}-hole round${data.count === 1 ? '' : 's'}. Rounds ended early are excluded.` : `No complete ${holeCount}-hole rounds ${account ? 'synced in this cache' : 'saved'} yet. Rounds ended early appear below.`}</AppText>
+          {account ? <AppText style={styles.muted}>{exclusions.pendingCount} pending {holeCount}-hole round{exclusions.pendingCount === 1 ? '' : 's'} excluded. {exclusions.partialCount} synced partial round{exclusions.partialCount === 1 ? '' : 's'} excluded from averages.</AppText> : null}
           <AppText style={styles.muted}>Fairways hit · Not recorded</AppText><AppText style={styles.muted}>Greens in regulation · Not recorded</AppText>
         </Card>
       </Animated.View>
@@ -55,7 +57,7 @@ function ScopedDashboard({ account }: { account: boolean }) {
         </Card>;
       })}
       <Button label="Open Rounds" onPress={() => router.push('/(tabs)/rounds')} />
-      <AppText style={styles.muted}>Recent rounds include all lengths. Open Rounds to view saved scorecards. Handicap is not calculated.</AppText>
+      <AppText style={styles.muted}>{account ? 'Recent synced rounds include all lengths. Statistics use at most the latest five complete rounds of the selected length within the account cache (up to 1,000). Open Rounds for pending copies and scorecards.' : 'Recent local rounds include all lengths. Open Rounds to view saved scorecards.'} Handicap is not calculated.</AppText>
     </>}
   </Screen>;
 }
