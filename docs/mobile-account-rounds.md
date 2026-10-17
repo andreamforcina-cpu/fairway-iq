@@ -1,5 +1,7 @@
 # Mobile account-owned round integration
 
+> Analytics follow-up, 2026-10-16: authenticated Home and the new Analytics screen now exclude pending copies from performance metrics; pending records remain visible in Rounds with separate counts. See [current Analytics contract](mobile-analytics.md). Earlier pending-inclusive Home descriptions below are historical.
+
 > User-reported verification, 2026-10-16: the principal guided iPhone save/totals/Synced/refresh/relaunch flow was reported working. The conditional second-account step and broader edge-case checklist are not individually confirmed. Historical statements below saying all device acceptance is pending are superseded only for that principal flow.
 
 Implemented on 2026-10-16 after backend PostgreSQL acceptance and the approved development migration. Manual iPhone end-to-end acceptance is still pending.

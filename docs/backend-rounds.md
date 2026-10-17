@@ -1,5 +1,7 @@
 # Account-owned rounds API — Sprint 1
 
+> Resource protection update, 2026-10-16: round requests now have bounded body size/receive time/fragments, 32 process-local concurrency slots and separate peer/account sliding-window quotas. Safe 400/408/413/429/503 errors are documented in [resource control report](security/round-resource-limits-2026-10-16.md). Full backend PostgreSQL verification is now 227 passed, zero skipped; the older notes below saying these controls are missing are superseded within this single-process scope. Public gateway/distributed protection remains open.
+
 > Mobile integration was implemented on 2026-10-16; see [mobile account rounds](mobile-account-rounds.md). Unit/hook/transport tests and platform exports pass; iPhone end-to-end acceptance remains pending.
 
 > Development rollout, 2026-10-16: migration 0003 was explicitly approved and successfully applied to the confirmed local `fairway_iq_dev` target. Read-only postflight verified the revision and zero ORM/schema differences. Production remains untouched; mobile integration remains pending. Earlier migration-pending statements below are historical.

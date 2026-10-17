@@ -1,5 +1,7 @@
 # FAIRWAY IQ mobile — Sprint 2 stabilization
 
+> Current boundary update, 2026-10-16: this Sprint 2 stabilization document is historical. Home and Rounds now use account-scoped server integration; Profile is real read-only identity, Analytics now displays acknowledged account summaries and AI Coach remains a placeholder. See [current architecture](architecture.md), [mobile account rounds](mobile-account-rounds.md) and [product roadmap](PRODUCT_ROADMAP.md). Older sample/local-only statements and test counts below do not describe the present implementation.
+
 ## Scope and architecture
 
 An independent Expo SDK 57 / React Native / TypeScript app lives in `mobile/`. It does not import React DOM components or change the website or FastAPI backend. File-based Expo Router navigation starts at the welcome screen; Get Started replaces it with a five-tab navigator. The Home tab contains an interactive, clearly labeled sample dashboard. Other tabs show future-sprint placeholders only.

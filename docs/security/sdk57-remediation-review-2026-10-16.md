@@ -1,5 +1,7 @@
 # SDK 57 dependency remediation review — 16 October 2026
 
+> Follow-up correction, 2026-10-16: the installed Expo Router incoming fork uses WHATWG URL/searchParams; the query-string.parse match cited below was commented-out upstream code. A bundled React Navigation fallback still uses query-string.parse. Four new exposure tests pass and the audit remains 28 findings. See [corrected installed-path assessment](mobile-dependency-exposure-followup-2026-10-16.md). The earlier override compatibility experiment is unchanged; no decoder fix or whole-app non-reachability is claimed.
+
 ## Result
 
 Applied four patch updates recommended by `npx expo install --check`, staying within SDK 57. The mobile registry audit remains **28 findings: 18 high, 10 moderate, zero critical**. These updates improve SDK compatibility; they do not remediate the URI decoder vulnerability or establish production readiness. No major upgrade, forced override or audit force-fix was applied.
