@@ -8,6 +8,7 @@ from backend.api.auth import router as auth_router
 from backend.api.sessions import router as session_router
 from backend.security.rate_limits import AuthRateLimiter, AuthRateLimitMiddleware
 from backend.security.response_headers import AuthResponseHeadersMiddleware
+from backend.security.round_limits import ROUND_PEER_LIMITS, RequestSlots, RoundRateLimiter, RoundResourceMiddleware
 
 app = FastAPI(
     title="FAIRWAY IQ API",
@@ -17,6 +18,9 @@ app = FastAPI(
 
 auth_rate_limiter = AuthRateLimiter()
 app.add_middleware(AuthRateLimitMiddleware, limiter=auth_rate_limiter)
+round_peer_limiter = RoundRateLimiter(ROUND_PEER_LIMITS)
+round_request_slots = RequestSlots()
+app.add_middleware(RoundResourceMiddleware, limiter=round_peer_limiter, slots=round_request_slots)
 app.add_middleware(AuthResponseHeadersMiddleware)
 
 

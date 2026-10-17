@@ -213,3 +213,28 @@ def test_concurrent_submission_key_has_one_committed_round(connection, conflicti
     finally:
         with engine.begin() as cleanup:
             cleanup.execute(text(f'DROP SCHEMA IF EXISTS "{schema}" CASCADE'))
+
+
+def test_account_throttle_preserves_idempotent_retry_and_other_owner(api, connection, monkeypatch):
+    from backend.api import rounds as routes
+    from backend.security.round_limits import ROUND_ACCOUNT_LIMITS, RoundRateLimiter
+
+    now = [0.0]
+    monkeypatch.setattr(routes, 'round_account_limiter', RoundRateLimiter(ROUND_ACCOUNT_LIMITS, clock=lambda: now[0]))
+    body = payload(9, 3)
+    first = api.request('first', 'POST', '/rounds', json=body)
+    assert first.status_code == 201
+    for _ in range(ROUND_ACCOUNT_LIMITS['write'] - 1):
+        replay = api.request('first', 'POST', '/rounds', json=body)
+        assert replay.status_code == 200 and replay.json()['id'] == first.json()['id']
+    blocked = api.request('first', 'POST', '/rounds', json=body)
+    assert blocked.status_code == 429 and blocked.headers['Retry-After'] == '60'
+    assert blocked.headers['Cache-Control'] == 'no-store'
+    with Session(bind=connection, join_transaction_mode='create_savepoint') as db:
+        assert db.scalar(select(func.count()).select_from(GolfRound)) == 1
+        assert db.scalar(select(func.count()).select_from(HoleScore)) == 3
+    # Quotas belong to the authenticated owner, independent of the shared peer address.
+    assert api.request('second', 'POST', '/rounds', json=body).status_code == 201
+    now[0] = 60
+    retry = api.request('first', 'POST', '/rounds', json=body)
+    assert retry.status_code == 200 and retry.json()['id'] == first.json()['id']
