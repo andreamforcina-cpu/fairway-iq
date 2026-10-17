@@ -207,3 +207,21 @@ test('explicit save retry uploads the durable current snapshot without reloading
   assert.equal(saved.draft, null); assert.equal(saved.history[0].serverId, serverId);
   assert.equal(f.requests.length, 1); assert.equal(f.store.notice, '');
 });
+
+test('server throttling retains pending scores and explicit retry keeps the same submission', async () => {
+  const f = fixture(); const attempted = [];
+  const submit = f.api.submit;
+  f.api.submit = async entry => {
+    attempted.push(submission(entry));
+    if (attempted.length === 1) throw Object.assign(new Error('rate limited'), { status: 429 });
+    return submit(entry);
+  };
+  const snapshot = { ...emptyLibrary(), history: [completed()] };
+  const pending = await f.store.save(snapshot);
+  assert.equal(pending.history[0].serverId, undefined);
+  assert.match(f.store.notice, /pending/);
+  const saved = await f.store.save(snapshot, true);
+  assert.equal(saved.history[0].serverId, serverId);
+  assert.deepEqual(attempted[0], attempted[1]);
+  assert.equal(f.remote.size, 1);
+});
