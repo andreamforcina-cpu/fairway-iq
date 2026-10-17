@@ -1,5 +1,7 @@
 # FAIRWAY IQ — Product Roadmap
 
+2026-10-16 update: a local CI workflow is now prepared; hosted execution and clean-install verification remain pending. See [CI quality lane](ci-quality-checks.md). The prior four security/Analytics/strategy commits are complete at `4a8a1ac`; older working-tree/pending-device statements below describe their earlier checkpoint. Principal Analytics/Home iPhone comparison is user-reported successful; broader native acceptance remains open.
+
 Aligned 2026-10-16. This is the current product sequencing proposal, superseding conflicting future-version groupings in older reports. It does not authorize coding, migrations, major upgrades, deployment, commits or push. Keep historical reports intact.
 
 ## Current checkpoint and sequencing rule

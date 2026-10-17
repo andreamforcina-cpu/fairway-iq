@@ -1,5 +1,7 @@
 # FAIRWAY IQ — Measurable V1 Acceptance Criteria
 
+2026-10-16 update: a local CI workflow is now prepared; hosted execution and clean-install verification remain pending. See [CI quality lane](ci-quality-checks.md). The prior four security/Analytics/strategy commits are complete at `4a8a1ac`; older working-tree/pending-device statements below describe their earlier checkpoint. Principal Analytics/Home iPhone comparison is user-reported successful; broader native acceptance remains open.
+
 Aligned 2026-10-16 for a controlled invited mobile pilot/demonstrator. All gates must have evidence; no overall percentage can substitute. Current statuses combine inspected source and explicitly dated prior evidence, not fresh execution of tests/services/devices during this strategy task.
 
 Evidence labels: **Implemented** = inspected code; **Automated** = previously executed named tests; **User-reported** = user's device confirmation; **Pending** = acceptance evidence absent. Passing mock tests, a bundled export, an API integration test and a physical second-device test are different evidence types.

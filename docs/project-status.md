@@ -1,5 +1,19 @@
 # FAIRWAY IQ — stato progetto
 
+## CI publication authorized — 2026-10-16
+
+The user approved the proposed CI checkpoint/publication next step with “ok go nrxt”. Reviewed the exact eight-file CI/docs scope, read-only workflow and isolated test target; origin/main fetched and confirmed four commits behind local main, with no remote-only commits. The upcoming push includes those four previously approved local security/Analytics/documentation commits plus this CI checkpoint. No force push or deployment is authorized. This entry is part of the CI commit; inspect Git for its final hash and publication outcome.
+
+No code changed since local verification: backend 227 and mobile 142 tests passed, mobile types/lint/platform export and web lint/build passed; CI YAML and whitespace checked. Clean-install/Linux/hosted execution remains pending until a GitHub run is observed. Exact next action: verify push outcome and inspect the workflow run for the published SHA, then record failures or success without treating local results as hosted evidence. Remaining advisory, native/two-device and host/distribution decisions remain open. No database operation, migration, private environment change or deployment during publication.
+
+## CI quality lane prepared — 2026-10-16
+
+Implemented `.github/workflows/ci.yml` with backend isolated PostgreSQL/no-skips gate, mobile types/lint/tests/all-platform preview export, and web lint/build. Read-only permissions, disabled persisted checkout credentials, bounded jobs, no production secrets/deployment. See [CI implementation and demo handoff](ci-quality-checks.md) for service isolation, upstream sources and reproducibility limits.
+
+Fresh local checks: backend 227 passed/no skips plus JUnit gate, mobile 142 passed/no skips plus types/lint/platform exports, web lint/build, YAML configuration checks and whitespace. Existing Starlette/httpx warning persists. Local installed dependencies were used; no clean installs or GitHub-hosted run occurred. actionlint unavailable. No native testing or fresh dependency audit; prior 28 advisory findings remain open. No application code or dependencies changed.
+
+Branch main at 4a8a1ac; the prior four approved commits are complete. New CI/docs work is unstaged/uncommitted, index empty. No push, database migration outside existing isolated test fixtures, production database operation, deployment or private environment inspection/change. Exact next action: review/checkpoint this CI slice with explicit commit/push approval, then capture the first hosted run and resolve any clean-install/Linux issues before accepting V1-10. V1-11 remains blocked on a chosen host/distribution target and approved deployment plan; signed/native/two-device acceptance remains pending.
+
 ## Authorized local checkpoint — 2026-10-16
 
 The user explicitly approved the four reviewed local commits with “si”. Created `bff164b` (backend resource controls), `f0a45ef` (mobile dependency/retry regressions) and `f2aee43` (account Analytics). This entry is included in the fourth approved commit, `docs: align product roadmap and record verified checkpoint`; obtain its hash from Git after creation. The exact file groups match the combined manifest. Branch main; staging was checked for exact inventory, credential/artifact patterns and whitespace before each commit. No application code changed during checkpoint creation, so tests were not unnecessarily repeated: latest mobile evidence remains 142 passes plus TypeScript/lint, with backend 227 PostgreSQL-inclusive passes and platform exports historical. Principal iPhone comparison remains user-reported; broader native cases and 28 dependency findings remain open.
