@@ -1,5 +1,21 @@
 # FAIRWAY IQ — stato progetto
 
+## First hosted CI failure diagnosed and corrected locally — 2026-10-16
+
+Observed [GitHub run 38996619682](https://github.com/andreamforcina-cpu/fairway-iq/actions/runs/38996619682) for 9c0073f via public API and backend job log (connector commit-run listing had returned empty). Hosted mobile and web jobs passed, including clean npm installs and mobile platform export. Backend service initialization and pip installation passed; pytest reported 5 failed/222 passed. The failures were the five POST variants in test_auth_cache.py: missing private DATABASE_URL configuration produced 503 during dependency setup before body validation. No hosted backend acceptance is claimed.
+
+Reproduced exactly 5 failures locally by disabling Settings dotenv loading in an isolated Python process. Fixed only the cache-policy test by monkeypatching auth/session database generators with a sentinel that fails on any database operation; original expected status/header assertions and the separate 503 regression remain intact. No production behavior, workflow, database target, dependency or environment file changed. Fresh no-dotenv verification: targeted 9 passed; full isolated PostgreSQL suite 227 passed, zero skips, existing Starlette/httpx warning. Whitespace passed. Mobile/web not rerun because unchanged; hosted results above are actual first-run evidence.
+
+Main at 9c0073f, published; index empty. Pending: backend/tests/test_auth_cache.py, CI evidence documentation and four canonical memory files (including earlier publication outcome). Exact next action: approve commit/push of this focused test-isolation fix and evidence, observe the next hosted run and confirm all three jobs before accepting CI. No corrective commit/push has occurred yet. Production deployment, dependency advisories and native/two-device gaps remain open.
+
+## CI checkpoint published — 2026-10-16
+
+Created and pushed `9c0073f` — `ci: add backend mobile and web quality checks`. Push succeeded without force: origin/main advanced from 3b5955c to 9c0073f, publishing the four approved preceding security/Analytics/docs commits as well. Local HEAD and origin/main were verified equal; tree/index were clean immediately after push. No deployment or database operation occurred.
+
+GitHub connector queried workflow runs twice for full commit 9c0073f06e9867a8afca81bbe9dd20b9845f92e0, including a later retry, and returned an empty list both times. Therefore no hosted run, clean installation or CI pass is confirmed. Actions enablement, workflow discovery and connector visibility are not yet verified; no cause is assumed. Local evidence remains backend 227/mobile 142 passes, types/lint/exports and web lint/build. No tests rerun for publication-only work.
+
+Exact next action: inspect repository Actions → Quality checks for 9c0073f; determine whether Actions/workflow permissions or discovery prevent execution, then dispatch/observe the workflow once available and record actual jobs. Do not bypass failures or claim V1-10 accepted. This publication-result memory update is unstaged/uncommitted in the four canonical memory docs; no extra commit/push was made. Existing dependency, native/two-device and hosted/signed-demo gaps remain open.
+
 ## CI publication authorized — 2026-10-16
 
 The user approved the proposed CI checkpoint/publication next step with “ok go nrxt”. Reviewed the exact eight-file CI/docs scope, read-only workflow and isolated test target; origin/main fetched and confirmed four commits behind local main, with no remote-only commits. The upcoming push includes those four previously approved local security/Analytics/documentation commits plus this CI checkpoint. No force push or deployment is authorized. This entry is part of the CI commit; inspect Git for its final hash and publication outcome.

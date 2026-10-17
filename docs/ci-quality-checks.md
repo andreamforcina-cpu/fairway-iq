@@ -1,5 +1,9 @@
 # CI quality checks and demo handoff
 
+## First hosted run and local correction — 2026-10-16
+
+[Run 38996619682](https://github.com/andreamforcina-cpu/fairway-iq/actions/runs/38996619682), commit `9c0073f`: mobile and web succeeded, including clean installs. Backend PostgreSQL initialization and pip install succeeded; tests failed (5 failed, 222 passed). Cache-header POST tests accidentally relied on private local database configuration before body validation. Reproduced with dotenv loading disabled; corrected with database generator sentinels that reject any DB operation, retaining original assertions and the separate unavailable-DB regression. Targeted 9 and full PostgreSQL-inclusive 227 tests now pass locally without dotenv; no skips. Fix remains uncommitted and unverified on GitHub. Earlier “not published/executed” statements below describe implementation-time evidence.
+
 Implemented 2026-10-16 in `.github/workflows/ci.yml`; not yet committed, published or executed on GitHub. This is a quality lane, not a deployment or signed native build.
 
 ## Workflow
