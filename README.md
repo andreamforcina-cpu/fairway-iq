@@ -1,82 +1,124 @@
 FAIRWAY IQ
-Golf performance tracking, built with React Native, FastAPI, and PostgreSQL.
+Know your game. Track your progress.
+A mobile-first golf analytics project built with React Native, FastAPI, and PostgreSQL.
 
-FAIRWAY IQ is a mobile-first sports technology portfolio project for amateur golfers. It combines scorecard tracking, account-owned round history, performance analytics, and secure backend engineering.
-Status: Active development. This is a portfolio prototype, not a production-hosted product or completed AI coach.
+Features · Architecture · Tech Stack · Getting Started · Roadmap
 
-Implemented features
-- Account registration, login, session refresh, logout, and authenticated profile.
-- Nine- and eighteen-hole round tracking, scorecards, draft persistence, and early finish.
-- Account-owned round submission, history and detail through REST APIs; pending/synced status and retry behavior.
-- Performance summaries for acknowledged complete rounds, with 9/18-hole filters and partial/pending exclusions.
-- Separate React/Vite landing and illustrative web demo.
-Technology
-Component	Stack
-Mobile	React Native, Expo Router, TypeScript, AsyncStorage, SecureStore
-API	Python 3.12, FastAPI, Pydantic, SQLAlchemy
-Database	PostgreSQL, Alembic
-Security	Argon2id password hashing, opaque sessions, refresh-token rotation
-Web	React, Vite, Tailwind CSS
-Testing	pytest, Node test runner, TypeScript, ESLint, GitHub Actions
+</div>Overview
+FAIRWAY IQ is a personal sports-technology project designed to help amateur golfers record rounds, review scorecards, and understand performance over time. It brings together mobile app development, REST API design, relational data modeling, and secure account management.
 
+The project is under active development. The current repository is a portfolio prototype, not a publicly released app. Features described as planned below are not presented as working product capabilities.
+Features
+Area	Current functionality
+Accounts	Registration, sign-in, authenticated profile, session refresh, and logout
+Round tracking	Nine- and eighteen-hole scorecards, local draft persistence, and early finish
+Round history	Account-owned round submission, history, and detail via REST endpoints
+Sync handling	Pending/synced states and retry behavior for round submissions
+Analytics	Performance summaries for acknowledged complete rounds, including 9/18-hole filtering
+Web presence	Separate React/Vite landing page and illustrative demo
+
+
+Design principle: Keep a reliable scorecard and data foundation before introducing automated shot tracking or coaching features.
 
 Architecture
-Expo / React Native app
-      | REST API
-      v
-FastAPI: auth, sessions, rounds
-      |
-      v
-PostgreSQL / SQLAlchemy
+                  ┌───────────────────────────┐
+                  │   Expo / React Native     │
+                  │  TypeScript mobile app    │
+                  └─────────────┬─────────────┘
+                                │ HTTPS / REST API
+                                ▼
+                  ┌───────────────────────────┐
+                  │     FastAPI backend       │
+                  │  Auth · Sessions · Rounds │
+                  └─────────────┬─────────────┘
+                                │ SQLAlchemy
+                                ▼
+                  ┌───────────────────────────┐
+                  │        PostgreSQL         │
+                  │  Users · Sessions · Rounds│
+                  └───────────────────────────┘
 
-React / Vite landing site (separate illustrative demo)
-Backend API
-Method	Path	Purpose
+        React / Vite landing page (separate web experience)
+Security-minded implementation
+- Argon2id-based password hashing.
+- Authenticated, account-scoped access to round data.
+- Opaque sessions and refresh-token rotation.
+- Database migrations managed with Alembic.
+These are implementation choices, not a claim that the application has undergone a production security audit.
+Tech Stack
+Layer	Technologies
+Mobile	React Native, Expo Router, TypeScript, AsyncStorage, SecureStore
+Backend	Python 3.12, FastAPI, Pydantic, SQLAlchemy
+Database	PostgreSQL, Alembic
+Web	React, Vite, Tailwind CSS
+Quality	pytest, Node.js test runner, TypeScript, ESLint, GitHub Actions
+
+
+API Overview
+Method	Endpoint	Description
 GET	/health	Health check
-POST	/auth/register	Register
-POST	/auth/login	Credential verification
-POST	/auth/token	Sign in
-POST	/auth/refresh	Refresh session
-POST	/auth/logout	Logout
-GET	/auth/me	Current user
-POST	/rounds	Submit round
-GET	/rounds	List owned rounds
-GET	/rounds/{round_id}	Round detail
+POST	/auth/register	Create an account
+POST	/auth/login	Verify credentials
+POST	/auth/token	Create an authenticated session
+POST	/auth/refresh	Rotate refresh credentials
+POST	/auth/logout	End a session
+GET	/auth/me	Get authenticated account
+POST	/rounds	Submit a round
+GET	/rounds	List the user's rounds
+GET	/rounds/{round_id}	Get a round's details
 
 
-Local development
-Prerequisites: Node.js/npm, Python 3.12, PostgreSQL, and development environment configuration. Follow [database setup](docs/backend-database.md) and [architecture](docs/architecture.md) for safe environment and migration procedures. Never commit .env or secrets.
-# repository root — after configuring a development database and migrations
+Getting Started
+Requirements
+- Python 3.12
+- Node.js and npm
+- PostgreSQL
+- Expo-compatible mobile development environment
+1. Clone the repository
+git clone https://github.com/andreamforcina-cpu/fairway-iq.git
+cd fairway-iq
+2. Configure the backend
+Set up a local development database, environment variables, and migrations following the repository's [database setup guide](docs/backend-database.md) and [architecture notes](docs/architecture.md).
 python -m pip install -r backend/requirements.txt
 uvicorn backend.main:app --reload
-
-# mobile/
+Never commit .env files, credentials, or private database URLs.
+3. Start the mobile app
+cd mobile
 npm install
 npm start
-
-# frontend/ (optional website)
+When testing on a physical phone, configure the API origin using a reachable development-machine address rather than localhost. Native integrations may require an Expo development build.
+4. Start the website (optional)
+cd frontend
 npm install
 npm run dev
-On a physical phone, configure the API origin to a reachable machine address rather than localhost. Native features may require an Expo development build.
-Quality checks
-# repository root; PostgreSQL integration requires an isolated TEST_DATABASE_URL
+Testing and Quality
+# From repository root; configure an isolated TEST_DATABASE_URL
 python -m pytest -c backend/pytest.ini backend/tests -q
 
-# mobile/
+# From mobile/
 npm run typecheck
 npm run lint
 npm test
 
-# frontend/
+# From frontend/
 npm run lint
 npm run build
-Historical verification (October 16, 2026): project documentation records 227 local backend tests passed with an isolated PostgreSQL database and 142 mobile tests passed, plus typecheck/lint. These are documented historical results, not tests rerun for this README. The first documented GitHub-hosted CI run had 222 backend passes and five failures related to missing private database configuration in tests; mobile and web jobs passed. A local correction was documented, but successful subsequent hosted CI is not yet confirmed. See [current state](docs/CURRENT_STATE.md).
-In progress / planned
-- AutoTrack: exploration of iPhone motion sensors and GPS for shot detection; accuracy and battery behavior remain unvalidated.
-- AI coaching: planned, not currently a functioning coach.
-- Production release: hosting, native/two-device validation, and dependency remediation remain open.
-See [product roadmap](docs/PRODUCT_ROADMAP.md).
-Screenshots
-Authentic application screenshots will be added after capture from a running build. No generated or illustrative screenshots are represented as actual product UI.
-About
-Created by Andrea Michelangelo Forcina to connect a personal interest in golf with mobile engineering, analytics, backend systems, and cybersecurity.
+Verification transparency: Historical project notes dated October 16, 2026 report 227 passing local backend tests and 142 passing mobile tests. These counts have not been rerun for this README. The first documented hosted CI run reported 222 backend passes and five failures associated with test configuration; mobile and web jobs passed. A subsequent fully passing hosted CI run has not been verified here. See [project status](docs/CURRENT_STATE.md).
+Roadmap
+Stage	Focus	Status
+1	Authentication, round tracking, round history, analytics foundation	Implemented in prototype
+2	Reliability, end-to-end validation, dependency remediation	In progress
+3	AutoTrack: iPhone motion/GPS-based shot detection research	Exploratory; accuracy and battery use unvalidated
+4	AI-powered coaching and deeper shot analysis	Planned
+5	Production deployment and broader device testing	Planned
+
+
+Read the [product roadmap](docs/PRODUCT_ROADMAP.md) for additional planning context.
+Screenshots and Demo
+Real screenshots and a verified demo will be added after capture from a running app build. No mockup is presented here as an actual screenshot.
+Why I Built It
+I started FAIRWAY IQ to combine my interest in golf with hands-on work in mobile software engineering, backend APIs, data analytics, and cybersecurity. The project gives me a practical way to design a product around a sport I play while learning how its systems fit together.
+<div align="center">Built by Andrea Michelangelo Forcina
+
+Sports technology · Mobile development · Secure backend systems
+</div>
